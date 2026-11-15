@@ -39,7 +39,7 @@ export function ActsAdmin({ pw, onOpenChat }: { pw: string; onOpenChat?: ((phone
       {sub === "regs" && <EngList onOpenChat={onOpenChat} onEdit={setEdit} pw={pw} rows={pending} refresh={refresh} empty="لا توجد طلبات تسجيل جديدة." />}
       {sub === "engineers" && <div className="flex justify-end"><button className={`${sm} inline-flex items-center gap-1 border-primary text-primary`} onClick={() => setEdit("new")}><Plus className="h-3 w-3" />إضافة مهندس</button></div>}
       {sub === "engineers" && <EngList onEdit={setEdit} pw={pw} rows={d.engineers.filter((e) => e.status !== "pending" && e.kind === "engineer")} refresh={refresh} empty="لا يوجد مهندسون بعد." />}
-      {sub === "survey" && <Requests pw={pw} d={{ ...d, requests: d.requests.filter(isSurvey) }} refresh={refresh} empty="لا توجد طلبات قياس أحمال بعد." />}
+      {sub === "survey" && <Surveys rows={d.requests.filter(isSurvey)} onOpenChat={onOpenChat} />}
       {sub === "requests" && <Requests pw={pw} d={{ ...d, requests: d.requests.filter((r) => !isSurvey(r)) }} refresh={refresh} />}
       {sub === "reviews" && <Reviews pw={pw} d={d} refresh={refresh} />}
       {edit && <EngForm pw={pw} eng={edit === "new" ? null : edit} onClose={() => setEdit(null)} refresh={refresh} />}
@@ -80,6 +80,25 @@ function EngList({ pw, rows, refresh, empty, onOpenChat }: { pw: string; rows: D
         {e.status === "approved" && <button className={`${sm} border-border`} onClick={() => act(e.id, "suspended")}>إيقاف</button>}
         <button className={`${sm} inline-flex items-center gap-1 border-destructive text-destructive`} onClick={async () => { if (!window.confirm(`حذف ${e.name} نهائياً؟`)) return; await del({ data: { pw, id: e.id } }); refresh(); }}><Trash2 className="h-3 w-3" />حذف</button>
       </div>
+    </div>;
+  })}</div>;
+}
+
+function Surveys({ rows, onOpenChat }: { rows: Data["requests"]; onOpenChat?: ((phone: string, name: string) => void) | undefined }) {
+  if (!rows.length) return <p className="text-sm text-muted-foreground">لا توجد طلبات قياس أحمال بعد.</p>;
+  return <div className="space-y-2">{rows.map((r) => {
+    const sys = r.description.replace(/\[طلب قياس أحمال\]/, "").replace(/الموقع:.*$/, "").replace(/[\[\]]/g, "").trim();
+    const loc = [r.governorate, r.city, r.location].filter(Boolean).join(" - ");
+    const Row = ({ k, v, ltr }: { k: string; v: string; ltr?: boolean }) => <div className="flex justify-between gap-2 border-b border-border py-1.5 last:border-0"><span className="text-muted-foreground">{k}</span><b dir={ltr ? "ltr" : undefined}>{v || "—"}</b></div>;
+    return <div key={r.id} className={card}>
+      <div className="mb-1 flex justify-between"><b>قياس الأحمال</b><span className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString("ar", { dateStyle: "short", timeStyle: "short" })}</span></div>
+      <div className="text-sm">
+        <Row k="الاسم" v={r.name ?? "عميل"} />
+        <Row k="الهاتف" v={r.phone} ltr />
+        <Row k="الموقع" v={loc} />
+        <Row k="النظام" v={sys} />
+      </div>
+      <button className={`${sm} mt-2 inline-flex w-full items-center justify-center gap-1 border-primary bg-primary text-primary-foreground`} onClick={() => onOpenChat?.(r.phone, r.name ?? "عميل")}><MessageCircle className="h-3 w-3" />فتح المحادثة</button>
     </div>;
   })}</div>;
 }
