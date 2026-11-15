@@ -9,7 +9,7 @@ import { REQ_STATUS, ENG_STATUS, SPECIALTIES, GOVERNORATES, REG_SERVICES } from 
 
 type Data = Awaited<ReturnType<typeof actsAdminData>>;
 type Eng = Data["engineers"][number];
-type Sub = "regs" | "engineers" | "requests" | "reviews" | "talent";
+type Sub = "regs" | "engineers" | "requests" | "reviews";
 const card = "rounded-xl border border-border bg-background p-3 text-sm";
 const sm = "rounded-full border px-2.5 py-1 text-xs font-semibold";
 
@@ -25,7 +25,7 @@ export function ActsAdmin({ pw, onOpenChat }: { pw: string; onOpenChat?: ((phone
   const openReports = d.reports.filter((r) => !r.resolved);
   const subs: [Sub, string, number][] = [
     ["regs", "طلبات التسجيل", pending.length], ["engineers", "المهندسون", 0], ["requests", "طلبات الخدمة", d.requests.filter((r) => r.status === "new").length],
-    ["reviews", "التقييمات والبلاغات", openReports.length], ["talent", "قاعدة المواهب", 0],
+    ["reviews", "التقييمات والبلاغات", openReports.length],
   ];
   return (
     <div dir="rtl" className="space-y-3 p-3">
@@ -39,7 +39,6 @@ export function ActsAdmin({ pw, onOpenChat }: { pw: string; onOpenChat?: ((phone
       {sub === "engineers" && <EngList onEdit={setEdit} pw={pw} rows={d.engineers.filter((e) => e.status !== "pending" && e.kind === "engineer")} refresh={refresh} empty="لا يوجد مهندسون بعد." />}
       {sub === "requests" && <Requests pw={pw} d={d} refresh={refresh} />}
       {sub === "reviews" && <Reviews pw={pw} d={d} refresh={refresh} />}
-      {sub === "talent" && <Talent d={d} />}
       {edit && <EngForm pw={pw} eng={edit === "new" ? null : edit} onClose={() => setEdit(null)} refresh={refresh} />}
     </div>
   );
@@ -126,21 +125,6 @@ function Reviews({ pw, d, refresh }: { pw: string; d: Data; refresh: () => void 
       {reported.has(v.id) && !v.hidden && <button className={`${sm} border-primary text-primary`} onClick={async () => { await mod({ data: { pw, review_id: v.id, hidden: false } }); refresh(); }}>إبقاء وإغلاق البلاغ</button>}
     </div>
   </div>)}</div>;
-}
-
-function Talent({ d }: { d: Data }) {
-  const [q, setQ] = useState(""); const [sp, setSp] = useState(""); const [kind, setKind] = useState("");
-  const rows = d.engineers.filter((e) => (!sp || e.specialty === sp) && (!kind || e.kind === kind) && (!q || `${e.name} ${e.skills.join(" ")} ${e.tools.join(" ")} ${e.city ?? ""} ${e.governorate ?? ""}`.includes(q)));
-  return <div className="space-y-2">
-    <div className="relative"><Search className="absolute right-2 top-2.5 h-4 w-4 text-muted-foreground" /><input className="w-full rounded-lg border border-border bg-card p-2 pr-8 text-sm" placeholder="بحث بالاسم، المهارة، البرنامج أو المدينة" value={q} onChange={(e) => setQ(e.target.value)} /></div>
-    <div className="grid grid-cols-2 gap-2">
-      <select className="rounded-lg border border-border bg-card p-1.5 text-xs" value={sp} onChange={(e) => setSp(e.target.value)}><option value="">كل التخصصات</option>{SPECIALTIES.map((x) => <option key={x}>{x}</option>)}</select>
-      <select className="rounded-lg border border-border bg-card p-1.5 text-xs" value={kind} onChange={(e) => setKind(e.target.value)}><option value="">الكل</option><option value="engineer">مهندسون</option><option value="student">طلاب</option></select></div>
-    <p className="text-xs text-muted-foreground">{rows.length} نتيجة</p>
-    {rows.map((e) => <div key={e.id} className={card}><b>{e.name}</b> <span className="text-xs text-muted-foreground">— {e.kind === "student" ? "طالب" : "مهندس"} · {ENG_STATUS[e.status]}</span>
-      <p className="text-xs">{e.specialty} · {[e.governorate, e.city].filter(Boolean).join(" - ")} · {e.years_exp} سنوات{e.phone && <> · <a href={`https://wa.me/${e.phone}`} target="_blank" rel="noreferrer" dir="ltr">{e.phone}</a></>}</p>
-      <p className="text-xs text-muted-foreground">{[...e.skills, ...e.tools].join("، ")}</p></div>)}
-  </div>;
 }
 
 const inp = "w-full rounded-lg border border-border bg-card p-2 text-sm";
