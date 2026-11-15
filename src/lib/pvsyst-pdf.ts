@@ -67,7 +67,7 @@ export async function buildReport(name: string, spec: SystemSpec, site: SiteData
   const c: Ctx = {
     doc, name: shapeArabic(name), src: site.source, date, total: 6,
     f: await doc.embedFont(StandardFonts.Helvetica), b: await doc.embedFont(StandardFonts.HelveticaBold),
-    u: await doc.embedFont(b64(FONT_B64), { subset: true }), logo: await doc.embedPng(b64(LOGO_B64)), pv: await doc.embedPng(b64(PVSYST_LOGO_B64)),
+    u: await doc.embedFont(b64(FONT_B64), { subset: false }), logo: await doc.embedPng(b64(LOGO_B64)), pv: await doc.embedPng(b64(PVSYST_LOGO_B64)),
     variant: `Hybrid System ${Math.round(s.kwp)} KWp`,
   };
   doc.setTitle(`${name} - Simulation report`); doc.setAuthor("ACTES");

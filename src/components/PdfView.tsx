@@ -11,7 +11,7 @@ export function PdfView({ url }: { url: string }) {
         const pdfjs = await import("pdfjs-dist");
         const worker = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url")).default;
         pdfjs.GlobalWorkerOptions.workerSrc = worker;
-        const doc = await pdfjs.getDocument({ url }).promise;
+        const doc = await pdfjs.getDocument({ url, standardFontDataUrl: "/pdf-fonts/" }).promise;
         const el = box.current;
         if (!el || dead) return;
         el.innerHTML = "";

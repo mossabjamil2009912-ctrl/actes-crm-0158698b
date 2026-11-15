@@ -53,7 +53,7 @@ export async function buildSld(name: string, spec: SystemSpec, when = new Date()
   doc.registerFontkit(fontkit);
   const p = doc.addPage([W, H]);
   const c: C = { p, f: await doc.embedFont(StandardFonts.Helvetica), b: await doc.embedFont(StandardFonts.HelveticaBold) };
-  const u = await doc.embedFont(b64(FONT_B64), { subset: true });
+  const u = await doc.embedFont(b64(FONT_B64), { subset: false });
   const logo = await doc.embedPng(b64(LOGO_B64));
   doc.setTitle(`${name} - SLD`); doc.setAuthor("ACTES");
   p.drawRectangle({ x: 0, y: 0, width: W, height: H, color: BG });
