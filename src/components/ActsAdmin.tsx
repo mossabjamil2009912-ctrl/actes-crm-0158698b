@@ -13,7 +13,7 @@ type Sub = "regs" | "engineers" | "requests" | "reviews" | "talent";
 const card = "rounded-xl border border-border bg-background p-3 text-sm";
 const sm = "rounded-full border px-2.5 py-1 text-xs font-semibold";
 
-export function ActsAdmin({ pw, onOpenChat }: { pw: string; onOpenChat?: (phone: string, name: string) => void }) {
+export function ActsAdmin({ pw, onOpenChat }: { pw: string; onOpenChat?: ((phone: string, name: string) => void) | undefined }) {
   const load = useServerFn(actsAdminData);
   const qc = useQueryClient();
   const { data, isLoading, error } = useQuery(offlineQuery({ queryKey: ["acts-admin"], queryFn: () => load({ data: { pw } }) }));
@@ -45,7 +45,7 @@ export function ActsAdmin({ pw, onOpenChat }: { pw: string; onOpenChat?: (phone:
   );
 }
 
-function EngList({ pw, rows, refresh, empty, onOpenChat }: { pw: string; rows: Data["engineers"]; refresh: () => void; empty: string; onEdit: (e: Eng) => void; onOpenChat?: (phone: string, name: string) => void }) {
+function EngList({ pw, rows, refresh, empty, onOpenChat }: { pw: string; rows: Data["engineers"]; refresh: () => void; empty: string; onEdit: (e: Eng) => void; onOpenChat?: ((phone: string, name: string) => void) | undefined }) {
   const set = useServerFn(actsSetEngineer);
   const del = useServerFn(actsDeleteEngineer);
   const [open, setOpen] = useState<string | null>(null);
