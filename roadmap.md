@@ -5,6 +5,7 @@
 - [x] ACTS: CRM admin screen (registrations, engineers, service requests, reviews/reports, talent base)
 - [x] Verify quote + registration end-to-end in browser (rating flow not yet clicked through)
 - [x] Import actes-crm from GitHub into this project (code, schema, 2026-10-31 data snapshot, chat files)
-- [ ] Load newer data from actes-crm-data-backup (blocked: user must supply the JSON files)
-- [ ] Reconnect GitHub connector for the daily backup (blocked: user choice)
+- [x] Load newer data from actes-crm-data-backup (2026-11-15)
+- [x] Reconnect GitHub connector
+- [ ] Turn on the daily GitHub backup schedule (blocked: wait for cutover so this copy doesn't overwrite the live app's backup)
 - [ ] Point n8n / ACTES standalone app at the new address after publish (blocked: user decision)
