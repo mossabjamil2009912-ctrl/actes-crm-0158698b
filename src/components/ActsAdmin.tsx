@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Phone, MessageCircle, Copy, ExternalLink, Search, Plus, Pencil, Trash2 } from "lucide-react";
+import { Phone, MessageCircle, Copy, ExternalLink, Search, Plus, Trash2 } from "lucide-react";
 import { actsAdminData, actsSetEngineer, actsUpdateRequest, actsModerate, actsSaveEngineer, actsDeleteEngineer } from "@/lib/acts.functions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { offlineQuery } from "@/lib/offline-cache";
@@ -13,7 +13,7 @@ type Sub = "regs" | "engineers" | "requests" | "reviews" | "talent";
 const card = "rounded-xl border border-border bg-background p-3 text-sm";
 const sm = "rounded-full border px-2.5 py-1 text-xs font-semibold";
 
-export function ActsAdmin({ pw }: { pw: string }) {
+export function ActsAdmin({ pw, onOpenChat }: { pw: string; onOpenChat?: (phone: string, name: string) => void }) {
   const load = useServerFn(actsAdminData);
   const qc = useQueryClient();
   const { data, isLoading, error } = useQuery(offlineQuery({ queryKey: ["acts-admin"], queryFn: () => load({ data: { pw } }) }));
@@ -34,7 +34,7 @@ export function ActsAdmin({ pw }: { pw: string }) {
       <div className="flex gap-1.5 overflow-x-auto pb-1">{subs.map(([k, l, n]) => <button key={k} onClick={() => setSub(k)} className={`${sm} shrink-0 ${sub === k ? "border-primary bg-primary text-primary-foreground" : "border-border"}`}>{l}{n > 0 && <span className="mr-1 rounded-full bg-destructive px-1.5 text-destructive-foreground">{n}</span>}</button>)}</div>
       {isLoading && <p className="text-sm text-muted-foreground">جارٍ التحميل...</p>}
       {error && <p className="text-sm text-destructive">{(error as Error).message}</p>}
-      {sub === "regs" && <EngList onEdit={setEdit} pw={pw} rows={pending} refresh={refresh} empty="لا توجد طلبات تسجيل جديدة." />}
+      {sub === "regs" && <EngList onOpenChat={onOpenChat} onEdit={setEdit} pw={pw} rows={pending} refresh={refresh} empty="لا توجد طلبات تسجيل جديدة." />}
       {sub === "engineers" && <div className="flex justify-end"><button className={`${sm} inline-flex items-center gap-1 border-primary text-primary`} onClick={() => setEdit("new")}><Plus className="h-3 w-3" />إضافة مهندس</button></div>}
       {sub === "engineers" && <EngList onEdit={setEdit} pw={pw} rows={d.engineers.filter((e) => e.status !== "pending" && e.kind === "engineer")} refresh={refresh} empty="لا يوجد مهندسون بعد." />}
       {sub === "requests" && <Requests pw={pw} d={d} refresh={refresh} />}
@@ -45,7 +45,7 @@ export function ActsAdmin({ pw }: { pw: string }) {
   );
 }
 
-function EngList({ pw, rows, refresh, empty, onEdit }: { pw: string; rows: Data["engineers"]; refresh: () => void; empty: string; onEdit: (e: Eng) => void }) {
+function EngList({ pw, rows, refresh, empty, onOpenChat }: { pw: string; rows: Data["engineers"]; refresh: () => void; empty: string; onEdit: (e: Eng) => void; onOpenChat?: (phone: string, name: string) => void }) {
   const set = useServerFn(actsSetEngineer);
   const del = useServerFn(actsDeleteEngineer);
   const [open, setOpen] = useState<string | null>(null);
@@ -72,11 +72,10 @@ function EngList({ pw, rows, refresh, empty, onEdit }: { pw: string; rows: Data[
       </div>}
       <div className="mt-2 flex flex-wrap gap-1.5">
         {e.status === "pending" ? (e.phone
-          ? <a className={`${sm} inline-flex items-center gap-1 border-primary bg-primary text-primary-foreground`} target="_blank" rel="noreferrer" href={`https://wa.me/${e.phone.replace(/\D/g, "")}?text=${encodeURIComponent(`مرحباً ${e.name}، معك فريق أكتس بخصوص طلب انضمامك إلى منصة ACTES.`)}`}><MessageCircle className="h-3 w-3" />فتح محادثة واتساب</a>
+          ? <button className={`${sm} inline-flex items-center gap-1 border-primary bg-primary text-primary-foreground`} onClick={() => onOpenChat?.(e.phone!, e.name)}><MessageCircle className="h-3 w-3" />فتح محادثة واتساب</button>
           : <span className="text-xs text-muted-foreground">لا يوجد رقم هاتف</span>)
           : e.status !== "approved" && <button className={`${sm} border-primary text-primary`} onClick={() => act(e.id, "approved")}>اعتماد</button>}
         {e.status === "approved" && <button className={`${sm} border-border`} onClick={() => act(e.id, "suspended")}>إيقاف</button>}
-        <button className={`${sm} inline-flex items-center gap-1 border-border`} onClick={() => onEdit(e)}><Pencil className="h-3 w-3" />تعديل</button>
         <button className={`${sm} inline-flex items-center gap-1 border-destructive text-destructive`} onClick={async () => { if (!window.confirm(`حذف ${e.name} نهائياً؟`)) return; await del({ data: { pw, id: e.id } }); refresh(); }}><Trash2 className="h-3 w-3" />حذف</button>
       </div>
     </div>;

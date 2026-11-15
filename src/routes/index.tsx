@@ -30,7 +30,7 @@ function playChime() {
   } catch { /* ignore */ }
 }
 import { STAGES, type Stage } from "@/lib/crm-data";
-import { listCustomers, getMessages, sendMessage, sendAttachment, saveNote, setBotPaused, listCatalog, listOrders, listTickets, listReportRequests, listQuotes, getKwhPrice } from "@/lib/crm.functions";
+import { listCustomers, getMessages, sendMessage, sendAttachment, saveNote, setBotPaused, listCatalog, listOrders, listTickets, listReportRequests, listQuotes, getKwhPrice, openCustomerChat } from "@/lib/crm.functions";
 import { enqueue, flush, isNetworkError, usePending } from "@/lib/outbox";
 import { offlineQuery, snapshotTime } from "@/lib/offline-cache";
 import { Paperclip, X } from "lucide-react";
@@ -209,6 +209,7 @@ function Dashboard({ pw, onLogout }: { pw: string; onLogout: () => void }) {
       void qcAll.invalidateQueries({ queryKey: ["messages", m.id] });
     });
   }, [online, pendingAll.length, sendQueued, pw, qcAll]);
+  const openChat = useServerFn(openCustomerChat);
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<Stage | "all">("all");
   const [openId, setOpenId] = useState<string | null>(null);
@@ -332,7 +333,7 @@ function Dashboard({ pw, onLogout }: { pw: string; onLogout: () => void }) {
         : view === "reports" ? <div className="rounded-xl border border-border bg-card lg:min-h-0 lg:flex-1 lg:overflow-y-auto"><Reports pw={pw} /></div>
         : view === "tickets" ? <div className="rounded-xl border border-border bg-card lg:min-h-0 lg:flex-1 lg:overflow-y-auto"><Tickets pw={pw} /></div>
         : view === "catalog" ? <div className="rounded-xl border border-border bg-card lg:min-h-0 lg:flex-1 lg:overflow-y-auto"><Catalog pw={pw} /></div>
-        : view === "acts" ? <div className="rounded-xl border border-border bg-card lg:min-h-0 lg:flex-1 lg:overflow-y-auto"><ActsAdmin pw={pw} /></div>
+        : view === "acts" ? <div className="rounded-xl border border-border bg-card lg:min-h-0 lg:flex-1 lg:overflow-y-auto"><ActsAdmin pw={pw} onOpenChat={async (phone, name) => { const r = await openChat({ data: { pw, phone, name } }); await qcAll.invalidateQueries({ queryKey: ["customers"] }); setView("chats"); setOpenId(r.id); }} /></div>
         : view === "flow" ? <div className="rounded-xl border border-border bg-card lg:min-h-0 lg:flex-1 lg:overflow-y-auto"><FlowPinGate><BotFlow pw={pw} /></FlowPinGate></div>
         : view === "quote" ? <div className="rounded-xl border border-border bg-background lg:min-h-0 lg:flex-1 lg:overflow-hidden"><QuoteBuilder pw={pw} /></div> : <>
         <div className="lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-3">

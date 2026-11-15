@@ -739,3 +739,18 @@ export const saveFrontendUrl = createServerFn({ method: "POST" })
     if (error) return { ok: false, message: "تعذّر الحفظ — بقي الرابط السابق", url: await readFrontendUrl() };
     return { ok: true, message: "تم الحفظ — كل الأجهزة المفتوحة تتحول خلال دقيقة", url: n.url };
   });
+
+export const openCustomerChat = createServerFn({ method: "POST" })
+  .inputValidator((d) => z.object({ pw: z.string(), phone: z.string().min(3).max(32), name: z.string().max(120).nullable() }).parse(d))
+  .handler(async ({ data }) => {
+    check(data.pw);
+    let phone = data.phone.replace(/\D/g, "").replace(/^00/, "");
+    if (/^0?7\d{8}$/.test(phone)) phone = "967" + phone.replace(/^0/, "");
+    const { supabaseAdmin } = await import("@/lib/db.server");
+    const tail = phone.slice(-9);
+    const { data: found } = await supabaseAdmin.from("customers").select("id").like("phone", `%${tail}`).limit(1);
+    if (found?.[0]) return { id: found[0].id as string };
+    const { data: row, error } = await supabaseAdmin.from("customers").insert({ phone, name: data.name } as never).select("id").single();
+    if (error) throw new Error(error.message);
+    return { id: (row as { id: string }).id };
+  });
