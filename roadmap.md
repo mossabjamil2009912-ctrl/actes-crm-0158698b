@@ -7,5 +7,7 @@
 - [x] Import actes-crm from GitHub into this project (code, schema, 2026-10-31 data snapshot, chat files)
 - [x] Load newer data from actes-crm-data-backup (2026-11-15)
 - [x] Reconnect GitHub connector
-- [ ] Turn on the daily GitHub backup schedule (blocked: wait for cutover so this copy doesn't overwrite the live app's backup)
-- [ ] Point n8n / ACTES standalone app at the new address after publish (blocked: user decision)
+- [x] Turn on the daily GitHub backup schedule (two runs nightly, one commit each)
+- [x] Merge customers/messages/tickets missing from the Nov 15 backup (from the Nov 14 one)
+- [x] Point n8n at the new address (this project now owns actes-crm.lovable.app)
+- [ ] Republish so the faster backup code is live (blocked: user must publish)

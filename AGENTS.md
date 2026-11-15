@@ -48,3 +48,4 @@ use the editor.
 - The ACTS quote flow reuses QuoteBuilder's `tieredOptions`/`tiersDayNight`, so app, CRM and bot recommend the same systems.
 - ACTS standalone app (separate Lovable project) talks to the CRM only through `/api/public/acts-bridge` (GET catalog/presets/kWh, POST {action,data} wrapping the public functions in `src/lib/acts.functions.ts`) — so both apps share one logic and database.
 - Android (Capacitor) app updates are manual only: `src/lib/manual-update.ts` reads `{service-url}/app-updates/latest.json` (built by `scripts/package-update.mjs`) with `autoUpdate: false`, so the installed local bundle keeps working offline.
+- Daily GitHub backup = two managed schedules on `/api/public/jobs/github-backup` (body `group: chat|other`), each writing its tables as one Git-data commit — the scheduler cancels requests after a few seconds, so per-file commits got cut off.
