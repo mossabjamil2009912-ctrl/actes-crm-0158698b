@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Eye, Send, Phone, Upload, Check, Trash2, X } from "lucide-react";
@@ -26,7 +26,7 @@ function toB64(f: File) {
   });
 }
 
-export function Reports({ pw }: { pw: string }) {
+export function Reports({ pw, autoOpenId, onAutoOpened }: { pw: string; autoOpenId?: string | null; onAutoOpened?: () => void }) {
   const { data, refetch } = useReports(pw);
   const requests = data?.requests ?? [];
   const files = data?.files ?? [];
@@ -49,6 +49,15 @@ export function Reports({ pw }: { pw: string }) {
       await refetch();
     });
   }
+
+  useEffect(() => {
+    if (!autoOpenId) return;
+    const r = requests.find((x) => x.id === autoOpenId);
+    if (!r) return;
+    onAutoOpened?.();
+    void openPreview(r);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoOpenId, requests]);
 
   async function run(key: string, fn: () => Promise<unknown>) {
     setBusy(key); setErr("");

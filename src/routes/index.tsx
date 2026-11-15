@@ -216,6 +216,18 @@ function Dashboard({ pw, onLogout }: { pw: string; onLogout: () => void }) {
   const [view, setView] = useState<"chats" | "orders" | "reports" | "tickets" | "catalog" | "quote" | "flow" | "acts">("chats");
   const { data: rep } = useReports(pw);
   const pendingReports = (rep?.requests ?? []).filter((r) => r.status === "pending").length;
+  // إشعار تفاعلي عند وصول طلب تقرير PVsyst أو مخطط SLD جديد
+  const seenReps = useRef<Set<string> | null>(null);
+  const [repAlert, setRepAlert] = useState<{ id: string; name: string; kind: string } | null>(null);
+  const [autoOpenRep, setAutoOpenRep] = useState<string | null>(null);
+  useEffect(() => {
+    const reqs = (rep?.requests ?? []).filter((r) => r.status === "pending");
+    if (!rep) return;
+    if (!seenReps.current) { seenReps.current = new Set(reqs.map((r) => r.id)); return; }
+    const fresh = reqs.filter((r) => !seenReps.current!.has(r.id));
+    fresh.forEach((r) => seenReps.current!.add(r.id));
+    if (fresh.length) { const r = fresh[0]!; setRepAlert({ id: r.id, name: r.name || "عميل", kind: r.kind }); playChime(); }
+  }, [rep]);
   const { data: tickets = [] } = useTickets(pw);
   const openTickets = tickets.filter((t) => t.status === "open").length;
   const { data: orders = [] } = useOrders(pw);
@@ -327,10 +339,18 @@ function Dashboard({ pw, onLogout }: { pw: string; onLogout: () => void }) {
         </div>
       </header>
 
+      {repAlert && (
+        <div className="fixed inset-x-2 top-2 z-40 mx-auto flex max-w-md items-center gap-2 rounded-xl border border-primary/40 bg-card p-3 shadow-2xl animate-in slide-in-from-top">
+          <FileBarChart className="h-5 w-5 shrink-0 text-primary" />
+          <p className="min-w-0 flex-1 text-sm">وصل طلب {repAlert.kind === "sld" ? "مخطط SLD" : "تقرير PVsyst"} من <b>{repAlert.name}</b></p>
+          <button onClick={() => { setAutoOpenRep(repAlert.id); setView("reports"); setRepAlert(null); }} className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground">معاينة وإرسال</button>
+          <button onClick={() => setRepAlert(null)} aria-label="إغلاق" className="shrink-0 rounded-md p-1 hover:bg-muted"><X className="h-4 w-4" /></button>
+        </div>
+      )}
       <div className="mx-auto w-full max-w-7xl flex-1 space-y-3 p-3 md:p-4 lg:flex lg:min-h-0 lg:flex-col lg:space-y-2 lg:p-2">
 
         {view === "orders" ? <div className="rounded-xl border border-border bg-card lg:min-h-0 lg:flex-1 lg:overflow-y-auto"><Orders pw={pw} /></div>
-        : view === "reports" ? <div className="rounded-xl border border-border bg-card lg:min-h-0 lg:flex-1 lg:overflow-y-auto"><Reports pw={pw} /></div>
+        : view === "reports" ? <div className="rounded-xl border border-border bg-card lg:min-h-0 lg:flex-1 lg:overflow-y-auto"><Reports pw={pw} autoOpenId={autoOpenRep} onAutoOpened={() => setAutoOpenRep(null)} /></div>
         : view === "tickets" ? <div className="rounded-xl border border-border bg-card lg:min-h-0 lg:flex-1 lg:overflow-y-auto"><Tickets pw={pw} /></div>
         : view === "catalog" ? <div className="rounded-xl border border-border bg-card lg:min-h-0 lg:flex-1 lg:overflow-y-auto"><Catalog pw={pw} /></div>
         : view === "acts" ? <div className="rounded-xl border border-border bg-card lg:min-h-0 lg:flex-1 lg:overflow-y-auto"><ActsAdmin pw={pw} onOpenChat={async (phone, name) => { const r = await openChat({ data: { pw, phone, name } }); await qcAll.invalidateQueries({ queryKey: ["customers"] }); setView("chats"); setOpenId(r.id); }} /></div>
