@@ -54,7 +54,7 @@ export async function buildSld(name: string, spec: SystemSpec, when = new Date()
   const doc = await PDFDocument.create();
   doc.registerFontkit(fontkit);
   const p = doc.addPage([W, H]);
-  const c: C = { p, f: await doc.embedFont(b64(SANS_B64), { subset: true }), b: await doc.embedFont(b64(SANS_BOLD_B64), { subset: true }) };
+  const c: C = { p, f: await doc.embedFont(b64(SANS_B64), { subset: false }), b: await doc.embedFont(b64(SANS_BOLD_B64), { subset: false }) };
   const u = await doc.embedFont(b64(FONT_B64), { subset: false });
   const logo = await doc.embedPng(b64(LOGO_B64));
   doc.setTitle(`${name} - SLD`); doc.setAuthor("ACTES");

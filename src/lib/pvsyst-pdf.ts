@@ -68,7 +68,7 @@ export async function buildReport(name: string, spec: SystemSpec, site: SiteData
   const date = `${String(when.getDate()).padStart(2, "0")}/${String(when.getMonth() + 1).padStart(2, "0")}/${String(when.getFullYear()).slice(2)} ${String(when.getHours()).padStart(2, "0")}:${String(when.getMinutes()).padStart(2, "0")}`;
   const c: Ctx = {
     doc, name: shapeArabic(name), src: site.source, date, total: 6,
-    f: await doc.embedFont(b64(SANS_B64), { subset: true }), b: await doc.embedFont(b64(SANS_BOLD_B64), { subset: true }),
+    f: await doc.embedFont(b64(SANS_B64), { subset: false }), b: await doc.embedFont(b64(SANS_BOLD_B64), { subset: false }),
     u: await doc.embedFont(b64(FONT_B64), { subset: false }), logo: await doc.embedPng(b64(LOGO_B64)), pv: await doc.embedPng(b64(PVSYST_LOGO_B64)),
     variant: `Hybrid System ${Math.round(s.kwp)} KWp`,
   };
