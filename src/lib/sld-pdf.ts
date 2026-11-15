@@ -1,6 +1,8 @@
 // Draws the single-line diagram PDF (dark navy layout, same colours as the ACTES reference SLD).
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage, type RGB } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
+import { SANS_B64 } from "@/lib/report-assets/sans-regular";
+import { SANS_BOLD_B64 } from "@/lib/report-assets/sans-bold";
 import { FONT_B64 } from "@/lib/report-assets/font";
 import { LOGO_B64 } from "@/lib/report-assets/logo";
 import { shapeArabic } from "@/lib/arabic-shape";
@@ -52,7 +54,7 @@ export async function buildSld(name: string, spec: SystemSpec, when = new Date()
   const doc = await PDFDocument.create();
   doc.registerFontkit(fontkit);
   const p = doc.addPage([W, H]);
-  const c: C = { p, f: await doc.embedFont(StandardFonts.Helvetica), b: await doc.embedFont(StandardFonts.HelveticaBold) };
+  const c: C = { p, f: await doc.embedFont(b64(SANS_B64), { subset: true }), b: await doc.embedFont(b64(SANS_BOLD_B64), { subset: true }) };
   const u = await doc.embedFont(b64(FONT_B64), { subset: false });
   const logo = await doc.embedPng(b64(LOGO_B64));
   doc.setTitle(`${name} - SLD`); doc.setAuthor("ACTES");

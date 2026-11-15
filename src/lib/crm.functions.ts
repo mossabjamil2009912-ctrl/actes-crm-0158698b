@@ -468,7 +468,9 @@ export const openPresetReport = createServerFn({ method: "POST" })
   });
 
 async function requestFile(supabaseAdmin: any, rq: { id: string; name: string | null; city?: string | null; lat?: number | null; lon?: number | null; tilt?: number | null; azimuth?: string | null; file_path: string | null; file_name: string | null; kind: string; system_label: string | null }) {
-  if (rq.file_path) return { path: rq.file_path, file_name: rq.file_name ?? "report.pdf" };
+  // Generated reports made before fonts were embedded (no "/v2-" in path) are rebuilt once.
+  const stale = !!rq.file_path && rq.file_path.startsWith("reports/requests/") && !rq.file_path.includes("/v2-") && (rq.kind === "sld" || rq.kind === "pvsyst");
+  if (rq.file_path && !stale) return { path: rq.file_path, file_name: rq.file_name ?? "report.pdf" };
   if (rq.kind === "sld") {
     // Draw the single-line diagram for this customer's own system and keep it with the request.
     const { parseSystem } = await import("@/lib/pvsyst-calc");
@@ -477,7 +479,7 @@ async function requestFile(supabaseAdmin: any, rq: { id: string; name: string | 
       const { buildSld } = await import("@/lib/sld-pdf");
       const name = (rq.name ?? "").trim() || "Customer";
       const bin = await buildSld(name, spec);
-      const path = `reports/requests/${rq.id}/${crypto.randomUUID()}.pdf`;
+      const path = `reports/requests/${rq.id}/v2-${crypto.randomUUID()}.pdf`;
       const file_name = `${name.replace(/[\\/:*?"<>|]/g, "")}_SLD.pdf`;
       const up = await supabaseAdmin.storage.from("crm-attachments").upload(path, bin, { contentType: "application/pdf" });
       if (up.error) throw new Error("تعذّر حفظ المخطط");
@@ -502,7 +504,7 @@ async function requestFile(supabaseAdmin: any, rq: { id: string; name: string | 
         site = await fetchSite({ ...loc, tilt: rq.tilt ?? null, dir });
       } catch (e) { console.error("PVGIS failed, using Sanaa reference data", e); }
       const bin = await buildReport(name, spec, site);
-      const path = `reports/requests/${rq.id}/${crypto.randomUUID()}.pdf`;
+      const path = `reports/requests/${rq.id}/v2-${crypto.randomUUID()}.pdf`;
       const file_name = `${name.replace(/[\\/:*?"<>|]/g, "")}_PVsyst.pdf`;
       const up = await supabaseAdmin.storage.from("crm-attachments").upload(path, bin, { contentType: "application/pdf" });
       if (up.error) throw new Error("تعذّر حفظ التقرير");
