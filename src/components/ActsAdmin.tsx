@@ -9,7 +9,8 @@ import { REQ_STATUS, ENG_STATUS, SPECIALTIES, GOVERNORATES, REG_SERVICES } from 
 
 type Data = Awaited<ReturnType<typeof actsAdminData>>;
 type Eng = Data["engineers"][number];
-type Sub = "regs" | "engineers" | "requests" | "reviews";
+type Sub = "regs" | "engineers" | "survey" | "requests" | "reviews";
+const isSurvey = (r: { service: string }) => r.service.includes("قياس");
 const card = "rounded-xl border border-border bg-background p-3 text-sm";
 const sm = "rounded-full border px-2.5 py-1 text-xs font-semibold";
 
@@ -24,7 +25,7 @@ export function ActsAdmin({ pw, onOpenChat }: { pw: string; onOpenChat?: ((phone
   const pending = d.engineers.filter((e) => e.status === "pending");
   const openReports = d.reports.filter((r) => !r.resolved);
   const subs: [Sub, string, number][] = [
-    ["regs", "طلبات التسجيل", pending.length], ["engineers", "المهندسون", 0], ["requests", "طلبات الخدمة", d.requests.filter((r) => r.status === "new").length],
+    ["regs", "طلبات التسجيل", pending.length], ["engineers", "المهندسون", 0], ["survey", "طلبات قياس الأحمال", d.requests.filter((r) => isSurvey(r) && r.status === "new").length], ["requests", "طلبات الخدمة", d.requests.filter((r) => !isSurvey(r) && r.status === "new").length],
     ["reviews", "التقييمات والبلاغات", openReports.length],
   ];
   return (
@@ -37,7 +38,8 @@ export function ActsAdmin({ pw, onOpenChat }: { pw: string; onOpenChat?: ((phone
       {sub === "regs" && <EngList onOpenChat={onOpenChat} onEdit={setEdit} pw={pw} rows={pending} refresh={refresh} empty="لا توجد طلبات تسجيل جديدة." />}
       {sub === "engineers" && <div className="flex justify-end"><button className={`${sm} inline-flex items-center gap-1 border-primary text-primary`} onClick={() => setEdit("new")}><Plus className="h-3 w-3" />إضافة مهندس</button></div>}
       {sub === "engineers" && <EngList onEdit={setEdit} pw={pw} rows={d.engineers.filter((e) => e.status !== "pending" && e.kind === "engineer")} refresh={refresh} empty="لا يوجد مهندسون بعد." />}
-      {sub === "requests" && <Requests pw={pw} d={d} refresh={refresh} />}
+      {sub === "survey" && <Requests pw={pw} d={{ ...d, requests: d.requests.filter(isSurvey) }} refresh={refresh} empty="لا توجد طلبات قياس أحمال بعد." />}
+      {sub === "requests" && <Requests pw={pw} d={{ ...d, requests: d.requests.filter((r) => !isSurvey(r)) }} refresh={refresh} />}
       {sub === "reviews" && <Reviews pw={pw} d={d} refresh={refresh} />}
       {edit && <EngForm pw={pw} eng={edit === "new" ? null : edit} onClose={() => setEdit(null)} refresh={refresh} />}
     </div>
@@ -81,11 +83,11 @@ function EngList({ pw, rows, refresh, empty, onOpenChat }: { pw: string; rows: D
   })}</div>;
 }
 
-function Requests({ pw, d, refresh }: { pw: string; d: Data; refresh: () => void }) {
+function Requests({ pw, d, refresh, empty = "لا توجد طلبات خدمة بعد." }: { pw: string; d: Data; refresh: () => void; empty?: string }) {
   const upd = useServerFn(actsUpdateRequest);
   const approved = d.engineers.filter((e) => e.status === "approved");
   const [notes, setNotes] = useState<Record<string, string>>({});
-  if (!d.requests.length) return <p className="text-sm text-muted-foreground">لا توجد طلبات خدمة بعد.</p>;
+  if (!d.requests.length) return <p className="text-sm text-muted-foreground">{empty}</p>;
   return <div className="space-y-2">{d.requests.map((r) => {
     const save = async (p: Partial<{ status: string; engineer_id: string | null; admin_notes: string }>) => {
       await upd({ data: { pw, id: r.id, status: (p.status ?? r.status) as "new", engineer_id: p.engineer_id !== undefined ? p.engineer_id : r.engineer_id, admin_notes: p.admin_notes ?? r.admin_notes } }); refresh();

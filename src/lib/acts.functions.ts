@@ -30,6 +30,7 @@ async function customerFor(phone: string, name: string | null, city: string | nu
   return id;
 }
 
+const LOAD_SURVEY = "قياس الأحمال";
 // ---------- Public ----------
 export const actsQuoteRequest = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({
@@ -44,6 +45,10 @@ export const actsQuoteRequest = createServerFn({ method: "POST" })
     const sb = await db();
     for (const kind of data.reports) {
       await sb.from("report_requests").insert({ phone: digits(data.phone), customer_id: id, name: data.name, system_label: data.system, kind, city: null });
+    }
+    if (data.system.includes("قياس أحمال")) {
+      const loc = data.system.split("الموقع:")[1]?.trim() || data.city;
+      await sb.from("acts_service_requests").insert({ phone: digits(data.phone), customer_id: id, name: data.name, service: LOAD_SURVEY, location: loc, description: data.system });
     }
     return { ok: true };
   });
