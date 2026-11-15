@@ -145,7 +145,7 @@ export function Reports({ pw, autoOpenId, onAutoOpened }: { pw: string; autoOpen
                       </button>
                       
                       <button disabled={!ready || busy === r.id} onClick={() => {
-                        if (confirm("إرسال التقرير للعميل على واتساب؟")) run(r.id, async () => { await send({ data: { pw, id: r.id } }); await refetch(); });
+                        run(r.id, async () => { await send({ data: { pw, id: r.id } }); await refetch(); });
                       }} className="flex items-center justify-center gap-1 rounded-lg bg-primary py-2 text-xs font-semibold text-primary-foreground disabled:opacity-50">
                         <Send className="h-4 w-4" />إرسال
                       </button>
@@ -173,7 +173,7 @@ export function Reports({ pw, autoOpenId, onAutoOpened }: { pw: string; autoOpen
             <PdfView url={preview.url} />
             <div className="grid grid-cols-2 gap-2 border-t p-2">
               <button disabled={!preview.pending || busy === preview.id} onClick={() => {
-                if (confirm("إرسال التقرير للعميل على واتساب؟")) run(preview.id, async () => { await send({ data: { pw, id: preview.id } }); closePreview(); await refetch(); });
+                run(preview.id, async () => { await send({ data: { pw, id: preview.id } }); closePreview(); await refetch(); });
               }} className="flex items-center justify-center gap-1 rounded-md bg-primary py-2 text-sm font-bold text-primary-foreground disabled:opacity-50"><Send className="h-4 w-4" />{preview.pending ? "إرسال" : "تم الإرسال"}</button>
               <button onClick={closePreview} className="flex items-center justify-center gap-1 rounded-md bg-muted py-2 text-sm font-bold"><X className="h-4 w-4" />إغلاق</button>
             </div>
