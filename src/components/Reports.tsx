@@ -1,3 +1,4 @@
+import { PdfView } from "@/components/PdfView";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -169,7 +170,7 @@ export function Reports({ pw, autoOpenId, onAutoOpened }: { pw: string; autoOpen
               <b className="flex-1 truncate text-sm">{preview.title}</b>
               <button onClick={closePreview} className="rounded-md p-1.5 hover:bg-muted"><X className="h-4 w-4" /></button>
             </div>
-            <iframe title="معاينة التقرير" src={preview.url} className="min-h-0 w-full flex-1 bg-background" />
+            <PdfView url={preview.url} />
             <div className="grid grid-cols-2 gap-2 border-t p-2">
               <button disabled={!preview.pending || busy === preview.id} onClick={() => {
                 if (confirm("إرسال التقرير للعميل على واتساب؟")) run(preview.id, async () => { await send({ data: { pw, id: preview.id } }); closePreview(); await refetch(); });
