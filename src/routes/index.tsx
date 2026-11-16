@@ -131,6 +131,7 @@ function Login({ onOk }: { onOk: (p: string) => void }) {
   return (
     <div dir="rtl" className="flex min-h-screen items-center justify-center bg-background p-6">
       <FrontendRedirect />
+      {showCatalogs && <div className="fixed inset-0 z-50 flex flex-col bg-background"><div className="flex h-7 items-center justify-between border-b border-border px-2"><span className="text-xs font-semibold leading-none">منصة الكتالوجات</span><button type="button" onClick={() => setShowCatalogs(false)} aria-label="إغلاق" className="px-2 text-sm leading-none">✕</button></div><iframe src="https://catalog-whisperer-starligight-shelf.lovable.app" title="منصة الكتالوجات" allow="clipboard-write" className="w-full flex-1 border-0" /></div>}
       <form
         className="w-full max-w-sm space-y-4 rounded-2xl border border-border bg-card p-6 shadow-sm"
         onSubmit={async (e) => {
@@ -298,7 +299,9 @@ function Dashboard({ pw, onLogout }: { pw: string; onLogout: () => void }) {
     { k: "quote" as const, l: "إنشاء عرض سعر", i: FilePlus2, n: 0 },
     { k: "flow" as const, l: "المسار", i: RouteIcon, n: 0 },
     { k: "acts" as const, l: "منصة أكتس", i: UsersIcon, n: 0 },
+    { k: "catalogs" as const, l: "منصة الكتالوجات", i: LayoutGrid, n: 0 },
   ];
+  const [showCatalogs, setShowCatalogs] = useState(false);
 
   return (
     <div dir="rtl" className="flex min-h-screen flex-col bg-background text-foreground lg:h-screen lg:overflow-hidden">
@@ -316,11 +319,11 @@ function Dashboard({ pw, onLogout }: { pw: string; onLogout: () => void }) {
             <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-foreground"><MessageCircle className="h-4 w-4" /></span>
             محادثات العملاء
           </h1>
-          <nav className="order-last grid w-full grid-cols-4 items-center gap-1 md:order-none md:flex md:w-auto md:flex-1 md:justify-center">
+          <nav className="order-last grid w-full grid-cols-5 items-center gap-0.5 md:order-none md:flex md:w-auto md:flex-1 md:justify-center">
             {tabs.map((t) => (
-              <button key={t.k} onClick={() => { setView(t.k); if (t.k !== "chats") setOpenId(null); }}
-                className={`relative flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1.5 text-[11px] font-semibold leading-tight md:flex-row md:gap-1.5 md:px-3 md:text-sm ${view === t.k ? "bg-primary text-primary-foreground shadow" : "hover:bg-ink-foreground/10"}`}>
-                <t.i className="h-4 w-4" />{t.l}
+              <button key={t.k} onClick={() => { if (t.k === "catalogs") { setShowCatalogs(true); return; } setView(t.k); if (t.k !== "chats") setOpenId(null); }}
+                className={`relative flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-lg px-0.5 py-1 text-[10px] font-semibold leading-tight md:flex-row md:gap-1 md:px-2 md:text-xs ${view === t.k ? "bg-primary text-primary-foreground shadow" : "hover:bg-ink-foreground/10"}`}>
+                <t.i className="h-3.5 w-3.5 shrink-0" /><span className="truncate max-w-full">{t.l}</span>
                 {t.n > 0 && <span className="absolute -top-1 left-1 rounded-full bg-destructive px-1.5 text-[10px] font-bold text-destructive-foreground">{t.n}</span>}
               </button>
             ))}
