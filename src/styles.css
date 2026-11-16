@@ -262,3 +262,8 @@
   pointer-events: none !important;
   opacity: 0 !important;
 }
+
+/* Phones: Chrome zooms the page when a field's text is under 16px; keep fields at 16px so the screen never jumps in. */
+@media (max-width: 768px) {
+  input, select, textarea { font-size: 16px !important; }
+}
