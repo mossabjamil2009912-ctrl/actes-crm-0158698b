@@ -49,3 +49,4 @@ use the editor.
 - ACTS standalone app (separate Lovable project) talks to the CRM only through `/api/public/acts-bridge` (GET catalog/presets/kWh, POST {action,data} wrapping the public functions in `src/lib/acts.functions.ts`) — so both apps share one logic and database.
 - Android (Capacitor) app updates are manual only: `src/lib/manual-update.ts` reads `{service-url}/app-updates/latest.json` (built by `scripts/package-update.mjs`) with `autoUpdate: false`, so the installed local bundle keeps working offline.
 - Daily GitHub backup = two managed schedules on `/api/public/jobs/github-backup` (body `group: chat|other`), each writing its tables as one Git-data commit — the scheduler cancels requests after a few seconds, so per-file commits got cut off.
+- The n8n bot must call only the current CRM host (no fallback to old project hosts): an old host still answers with its own stale data, so the bot silently used old items/prices/texts.
