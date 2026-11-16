@@ -6,6 +6,7 @@ import { SANS_BOLD_B64 } from "@/lib/report-assets/sans-bold";
 import { FONT_B64 } from "@/lib/report-assets/font";
 import { LOGO_B64 } from "@/lib/report-assets/logo";
 import { shapeArabic } from "@/lib/arabic-shape";
+import type { ReportItems } from "@/lib/report-items";
 import { SITE, MONTHS, LOSSES, PANEL_W, simulate, kwpText, aspectsOf, SANAA_SITE, type SystemSpec, type Sim, type SiteData } from "@/lib/pvsyst-calc";
 import { PVSYST_LOGO_B64 } from "@/lib/report-assets/pvsyst-logo";
 
@@ -58,7 +59,7 @@ function bars(c: Ctx, p: PDFPage, x: number, y: number, w: number, h: number, se
   txt(p, yl, x, y - 16, c.f, 5, GREY);
 }
 
-export async function buildReport(name: string, spec: SystemSpec, site: SiteData = SANAA_SITE, when = new Date()): Promise<Uint8Array> {
+export async function buildReport(name: string, spec: SystemSpec, site: SiteData = SANAA_SITE, when = new Date(), items: ReportItems = {}): Promise<Uint8Array> {
   const s: Sim = simulate(spec, site);
   const az = aspectsOf(site.dir).map((a) => (a + 540) % 360);
   const orient = (i: number): [string, string][] => az[i] == null ? [["", ""], ["", ""]] : [[`Orientation #${i + 1} - Fixed plane`, ""], ["Tilt/Azimuth", `${fmt(site.tilt, 1)} / ${az[i]} °`]];
@@ -73,7 +74,12 @@ export async function buildReport(name: string, spec: SystemSpec, site: SiteData
     variant: `Hybrid System ${kwpText(s.kwp)} KWp`,
   };
   doc.setTitle(`${name} - Simulation report`); doc.setAuthor("ACTES");
-  const invName = `Solis ${spec.kw} kW${spec.three ? " 3-phase" : ""}`;
+  const invBrand = items.inverter?.brand || "-";
+  const invName = items.inverter?.model || `${spec.kw} kW${spec.three ? " 3-phase" : ""}`;
+  const panelBrand = items.panel?.brand || "Suntech";
+  const panelModel = items.panel?.model || `${spec.panelW || PANEL_W} Wp`;
+  const batBrand = items.battery?.brand || "-";
+  const batModel = items.battery?.model ? `${items.battery.model}${items.battery.qty > 1 ? ` x ${items.battery.qty}` : ""}` : "-";
 
   // 1 — cover
   {
@@ -127,11 +133,11 @@ export async function buildReport(name: string, spec: SystemSpec, site: SiteData
     });
     y -= 140; box(c, p, "PV Array Characteristics", y, 175);
     txt(p, "PV module", M + 8, y - 16, c.b, 7);
-    rows(c, p, M + 8, y - 26, [["Manufacturer", "Suntech"], ["Model", "STP720S-D66-Nsh+"], ["Unit Nom. Power", `${spec.panelW || PANEL_W} Wp`], ["Number of PV modules", `${spec.panels} units`], ["Nominal (STC)", `${kwpText(s.kwp)} kWp`], ["Modules", `${s.strings} string x ${s.series} in series`], ["Module area", `${fmt(s.area)} m²`]], 200);
+    rows(c, p, M + 8, y - 26, [["Manufacturer", panelBrand], ["Model", panelModel], ["Unit Nom. Power", `${spec.panelW || PANEL_W} Wp`], ["Number of PV modules", `${spec.panels} units`], ["Nominal (STC)", `${kwpText(s.kwp)} kWp`], ["Modules", `${s.strings} string x ${s.series} in series`], ["Module area", `${fmt(s.area)} m²`]], 200);
     txt(p, "Inverter", M + 270, y - 16, c.b, 7);
-    rows(c, p, M + 270, y - 26, [["Manufacturer", "Solis"], ["Model", invName], ["Unit Nom. Power", `${spec.kw} kWac`], ["Number of inverters", `${spec.invCount} units`], ["Total power", `${s.acKw} kWac`], ["Pnom ratio (DC:AC)", fmt(s.pnomRatio, 2)]], 230);
+    rows(c, p, M + 270, y - 26, [["Manufacturer", invBrand], ["Model", invName], ["Unit Nom. Power", `${spec.kw} kWac`], ["Number of inverters", `${spec.invCount} units`], ["Total power", `${s.acKw} kWac`], ["Pnom ratio (DC:AC)", fmt(s.pnomRatio, 2)]], 230);
     txt(p, "Battery", M + 8, y - 110, c.b, 7);
-    rows(c, p, M + 8, y - 120, [["Storage", "Self-consumption"], ["Voltage", `${s.battery.v} V`], ["Nominal Capacity (C10)", `${fmt(s.battery.ah)} Ah`], ["Nominal energy", `${s.battery.kwh} kWh`], ["Operating SOC limits", "98.0 / 10.0 %"]], 200);
+    rows(c, p, M + 8, y - 120, [["Manufacturer", batBrand], ["Model", batModel], ["Storage", "Self-consumption"], ["Voltage", `${s.battery.v} V`], ["Nominal Capacity (C10)", `${fmt(s.battery.ah)} Ah`], ["Nominal energy", `${s.battery.kwh} kWh`], ["Operating SOC limits", "98.0 / 10.0 %"]], 200);
     txt(p, "Array losses", M + 270, y - 110, c.b, 7);
     rows(c, p, M + 270, y - 120, [["Array soiling loss fraction", "3.0 %"], ["LID loss fraction", "2.00 %"], ["Module quality loss", "-0.75 %"], ["Module mismatch loss", "2.00 % at MPP"], ["Unavailability (time fraction)", "2.0 %"]], 230);
   }

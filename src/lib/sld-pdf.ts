@@ -6,6 +6,7 @@ import { SANS_BOLD_B64 } from "@/lib/report-assets/sans-bold";
 import { FONT_B64 } from "@/lib/report-assets/font";
 import { LOGO_B64 } from "@/lib/report-assets/logo";
 import { shapeArabic } from "@/lib/arabic-shape";
+import type { ReportItems } from "@/lib/report-items";
 import type { SystemSpec } from "@/lib/pvsyst-calc";
 import { design, PANEL } from "@/lib/sld-calc";
 import { kwpText } from "@/lib/pvsyst-calc";
@@ -50,7 +51,7 @@ function panelIcon(c: C, x: number, y: number) {
   }
 }
 
-export async function buildSld(name: string, spec: SystemSpec, when = new Date()): Promise<Uint8Array> {
+export async function buildSld(name: string, spec: SystemSpec, when = new Date(), items: ReportItems = {}): Promise<Uint8Array> {
   const d = design(spec);
   const doc = await PDFDocument.create();
   doc.registerFontkit(fontkit);
@@ -83,19 +84,19 @@ export async function buildSld(name: string, spec: SystemSpec, when = new Date()
   badge(c, 196, 48 + Math.min(2, shown - 1) * 36 + 5, d.drops.string, 3);
   t(c, `typical — total ${d.strings} strings x ${d.perString} modules (${d.panels} modules)`, 28, 48 + shown * 36 + 6, 6, MUTED);
   line(c, dcX + 2, 52, dcX + 2, 48 + shown * 36 - 18, DC, 1.6);
-  box(c, dcX, dcY, dcW, dcH, "DC PROTECTION BOARD", [`${d.strings} Way — IP65 UV`, "Fuse gPV 32 A / 1000 V DC", "DC Isolator (load break)", "Icu 10 kA", "DC SPD Type 2"], AC);
+  box(c, dcX, dcY, dcW, dcH, "DC PROTECTION BOARD", items.dcBox?.length ? items.dcBox.slice(0, 5) : [`${d.strings} Way`, "As per quote"], AC);
   for (let i = 0; i < 6; i++) c.p.drawRectangle({ x: dcX + dcW - 18, y: Y(70 + i * 30), width: 6, height: 14, borderColor: WHITE, borderWidth: 0.6 });
 
   // ---- Battery
   const bx = 185, by = 252;
   box(c, bx, by, 152, 55, "BATTERY BANK", d.batCount ? [`${d.batCount} x ${d.batModule} kWh = ${d.batKwh} kWh`, `Nominal ${d.batV} V DC`, `Max current ≈ ${d.batI} A`.replace("≈", "~")] : ["No battery"], DC);
-  t(c, PANEL.model, 28, by + 52, 6, MUTED);
+  t(c, items.battery?.model ? `${items.battery.brand} ${items.battery.model}${items.battery.qty > 1 ? " x " + items.battery.qty : ""}` : "", 28, by + 52, 6, MUTED);
 
   // ---- Inverter
   const ix = 466, iy = 114, iw = 150, ih = 76;
   t(c, `STRING CHECK: Voc ${d.voc} V within ${d.mppt.min}–${d.mppt.max} V`, ix + iw / 2 - 10, 104, 6, d.vocOk ? MUTED : DC, false, "c");
   box(c, ix, iy, iw, ih, `PV INVERTER — ${ph}`, [`${d.invCount} x ${d.kw} kW = ${d.totalKw} kW`, `MPPT inputs: ${d.mpptInputs}`, `MPPT: ${d.mppt.min}–${d.mppt.max} V`, `BAT port: ${d.batV} V DC`], AC);
-  t(c, `Solis ${d.kw}K ${ph} Hybrid`, ix + iw / 2, iy + ih + 10, 6.5, MUTED, false, "c");
+  t(c, items.inverter ? `${items.inverter.brand} ${items.inverter.model}`.trim() : `${d.kw}K ${ph} Hybrid`, ix + iw / 2, iy + ih + 10, 6.5, MUTED, false, "c");
   d.mpptMap.forEach((ids, i) => {
     const y = 140 + i * 8;
     line(c, dcX + dcW, y, ix, y, DC, 1.2); dot(c, dcX + dcW, y, DC, 1.8);
