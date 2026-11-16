@@ -13,6 +13,11 @@ describe("simulation report numbers", () => {
     expect(parseSystem("إنفرتر سوليس 50 كيلو وات 3 فاز جهد عالي × 2 | ألواح: 150 (108 ك.و) | بطاريات: 128 كيلو"))
       .toEqual({ kw: 50, invCount: 2, three: true, panels: 150, batKwh: 128 });
   });
+  it("reads panel count before ألواح, not the 720W wattage", () => {
+    const sp = parseSystem("طلب دراسة PVsyst – 8 كيلو — بطارية 16 كيلو — 8 ألواح 720W");
+    expect(sp?.panels).toBe(8);
+    expect(simulate(sp!).kwp).toBe(5.76);
+  });
   it("capacity is panels × 0.72 kWp and DC/AC ratio follows", () => {
     const s = simulate({ kw: 50, invCount: 2, three: true, panels: 150, batKwh: 128 });
     expect(s.kwp).toBe(108);

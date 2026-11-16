@@ -55,7 +55,8 @@ export function parseSystem(label: string | null | undefined): SystemSpec | null
   const t = digits(label);
   const num = (re: RegExp) => { const m = t.match(re); return m?.[1] ? parseFloat(m[1]) : 0; };
   const kw = num(/(\d+(?:\.\d+)?)\s*كيلو(?!\s*\))/);
-  const panels = num(/ألواح:?\s*(\d+)/) || num(/(\d+)\s*(?:لوح|ألواح)/);
+  // Count is the number written right before "ألواح" (e.g. "8 ألواح 720W"), else "ألواح: 150"; never the wattage.
+  const panels = num(/(\d+)\s*(?:لوح|ألواح)/) || num(/ألواح:\s*(\d+)(?!\s*W)/i);
   if (!kw || !panels) return null;
   return {
     kw,
