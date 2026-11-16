@@ -507,7 +507,7 @@ export async function requestFile(supabaseAdmin: any, rq: { id: string; name: st
         site = await fetchSite({ ...loc, tilt: tilt ?? null, dir });
       } catch (e) { console.error("PVGIS failed, using Sanaa reference data", e); }
       const { reportItems } = await import("@/lib/report-items");
-      const loads = Array.isArray((rq as { loads?: unknown }).loads) ? ((rq as { loads: number[] }).loads) : null;
+      const loads = Array.isArray((rq as { loads?: unknown }).loads) ? ((rq as unknown as { loads: number[] }).loads) : null;
       const bin = await buildReport(name, { ...spec, loads }, site, new Date(), reportItems(rq.system_label));
       const path = `reports/requests/${rq.id}/v8-${crypto.randomUUID()}.pdf`;
       const file_name = `${name.replace(/[\\/:*?"<>|]/g, "")}_PVsyst.pdf`;

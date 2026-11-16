@@ -228,7 +228,7 @@ export const actsReportRequest = createServerFn({ method: "POST" })
     const msg = `📱 طلب ${data.kind === "pvsyst" ? "تقرير PVsyst" : "مخطط SLD"} من تطبيق ACTS\nالمنظومة: ${data.system}`;
     const id = await customerFor(data.phone, data.name, data.city, msg, "quote");
     const sb = await db();
-    const { data: rq } = await sb.from("report_requests").insert({ phone: digits(data.phone), customer_id: id, name: data.name, system_label: data.system, kind: data.kind, city: data.city, tilt: data.tilt != null && data.tilt !== "" && isFinite(+data.tilt) ? +data.tilt : null, azimuth: ["s", "n", "e", "w", "ns", "ew"].includes(data.direction ?? "") ? data.direction : null, loads: data.loads?.some((v) => v > 0) ? data.loads : null }).select("*").single();
+    const { data: rq } = await sb.from("report_requests").insert({ phone: digits(data.phone), customer_id: id, name: data.name, system_label: data.system, kind: data.kind, city: data.city, tilt: data.tilt != null && data.tilt !== "" && isFinite(+data.tilt) ? +data.tilt : null, azimuth: ["s", "n", "e", "w", "ns", "ew"].includes(data.direction ?? "") ? (data.direction ?? null) : null, loads: data.loads?.some((v) => v > 0) ? data.loads : null }).select("*").single();
     const { prewarmReport } = await import("@/lib/crm.functions");
     void prewarmReport(sb, rq);
     return { ok: true };
