@@ -17,6 +17,7 @@ const TABLES: { k: string; t: string; i: typeof Zap }[] = [
   { k: "panels", t: "الألواح الشمسية", i: Sun },
   { k: "dc_boxes", t: "صناديق حماية DC", i: Box },
   { k: "ac_panel", t: "لوحات حماية AC", i: ShieldCheck },
+  { k: "combiner_panels", t: "لوحات التجميع", i: ShieldCheck },
   { k: "racks", t: "راكات وكبائن التخزين", i: Server },
   { k: "stands", t: "استندات المنظومات", i: Home },
   { k: "battery_controls", t: "كنترولات وحماية البطاريات", i: Cpu },
