@@ -570,8 +570,8 @@ export function QuoteBuilder({ pw, initialCustomerId }: { pw: string; initialCus
   };
 
   return (
-    <div className="grid gap-3 p-3 lg:h-full lg:grid-cols-[minmax(0,1fr)_360px] lg:overflow-hidden">
-      <section className="flex min-h-0 flex-col gap-3">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-3 p-3 lg:h-full lg:grid-cols-[minmax(0,1fr)_360px] lg:overflow-hidden">
+      <section className="flex min-h-0 min-w-0 flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="flex items-center gap-2 text-lg font-bold"><FilePlus2 className="h-5 w-5 text-primary" />إنشاء عرض سعر</h2>
           <div className="mr-auto flex flex-wrap items-center gap-1">
@@ -693,7 +693,7 @@ export function QuoteBuilder({ pw, initialCustomerId }: { pw: string; initialCus
         </div>
       </section>
 
-      <aside className="flex min-h-0 flex-col gap-1.5 rounded-xl border bg-card p-2 shadow-sm">
+      <aside className="flex min-h-0 min-w-0 flex-col gap-1.5 rounded-xl border bg-card p-2 shadow-sm">
         <select value={custId ?? ""} onChange={(e) => pickCustomer(e.target.value)} className="rounded-md border bg-background px-2 py-1 text-xs">
           <option value="">— العميل: جديد / بدون —</option>
           {customers.map((c) => <option key={c.id} value={c.id}>{c.name || c.phone} {c.name ? `(${c.phone})` : ""}</option>)}
