@@ -297,7 +297,7 @@ function Dashboard({ pw, onLogout }: { pw: string; onLogout: () => void }) {
     { k: "catalog" as const, l: "الأصناف", i: LayoutGrid, n: 0 },
     { k: "quote" as const, l: "إنشاء عرض سعر", i: FilePlus2, n: 0 },
     { k: "flow" as const, l: "المسار", i: RouteIcon, n: 0 },
-    { k: "acts" as const, l: "ACTES", i: UsersIcon, n: 0 },
+    { k: "acts" as const, l: "منصة أكتس", i: UsersIcon, n: 0 },
   ];
 
   return (
