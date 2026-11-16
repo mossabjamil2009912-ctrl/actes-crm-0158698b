@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 type Box = { x: number; y: number; w: number; h: number };
+const KEY = "floating_win_";
 
 export function FloatingAppWindow({ title, src, allow, onClose }: { title: string; src: string; allow?: string; onClose: () => void }) {
   const [desk, setDesk] = useState(false);
@@ -14,14 +15,24 @@ export function FloatingAppWindow({ title, src, allow, onClose }: { title: strin
     const d = window.innerWidth >= 768;
     setDesk(d);
     const h = Math.min(740, window.innerHeight - 24);
-    setBox({ w: 390, h, x: (window.innerWidth - 390) / 2, y: (window.innerHeight - h) / 2 });
-  }, []);
+    let b: Box = { w: 390, h, x: (window.innerWidth - 390) / 2, y: (window.innerHeight - h) / 2 };
+    try {
+      const saved = JSON.parse(localStorage.getItem(KEY + title) || "null");
+      if (saved && typeof saved.w === "number") {
+        const w = Math.min(Math.max(300, saved.w), window.innerWidth);
+        const hh = Math.min(Math.max(300, saved.h), window.innerHeight);
+        b = { w, h: hh, x: Math.min(Math.max(0, saved.x), window.innerWidth - w), y: Math.min(Math.max(0, saved.y), window.innerHeight - hh) };
+      }
+    } catch { /* ignore */ }
+    setBox(b);
+  }, [title]);
 
   const start = (mode: string) => (e: React.PointerEvent) => {
     if (!desk || max) return;
     e.preventDefault();
     drag.current = { mode, sx: e.clientX, sy: e.clientY, b: box };
     setBusy(true);
+    let last: Box | null = null;
     const move = (ev: PointerEvent) => {
       const s = drag.current; if (!s) return;
       const dx = ev.clientX - s.sx, dy = ev.clientY - s.sy;
@@ -31,8 +42,9 @@ export function FloatingAppWindow({ title, src, allow, onClose }: { title: strin
       if (s.mode.includes("l")) { n.w = Math.max(300, s.b.w - dx); n.x = s.b.x + s.b.w - n.w; }
       if (s.mode.includes("b")) n.h = Math.max(300, s.b.h + dy);
       setBox(n);
+      last = n;
     };
-    const up = () => { drag.current = null; setBusy(false); window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
+    const up = () => { if (last) try { localStorage.setItem(KEY + title, JSON.stringify(last)); } catch { /* ignore */ } drag.current = null; setBusy(false); window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
   };
