@@ -600,7 +600,6 @@ export function QuoteBuilder({ pw, initialCustomerId }: { pw: string; initialCus
                 <button type="button" onClick={saveKwhPrice} className="rounded-lg bg-primary px-2 py-1 font-bold text-primary-foreground">حفظ</button>
                 <button type="button" onClick={() => setKwhEdit(null)} className="rounded-lg bg-muted px-2 py-1">إلغاء</button></>}
           </div>
-          <button onClick={() => setShowHist((v) => !v)} className="flex items-center gap-1 rounded-lg bg-muted px-3 py-1.5 text-xs font-semibold hover:bg-muted/70"><History className="h-4 w-4" />العروض الجاهزة ({PRESETS.length})</button>
         </div>
         {invs && !tiers && (
           <div className="rounded-xl border bg-muted/30 p-2">
@@ -626,22 +625,6 @@ export function QuoteBuilder({ pw, initialCustomerId }: { pw: string; initialCus
                 <button key={k} type="button" onClick={() => { setTiers(null); loadPreset(p); }} className={`rounded-lg border px-2 py-1.5 text-right text-xs hover:bg-muted ${k === "rec" ? "border-primary bg-primary/10" : "bg-card"}`}><div className="font-bold">{label}</div><div className="text-muted-foreground">{p.title}</div></button>
               ) : null; })}
             </div>
-          </div>
-        )}
-        {showHist && (
-          <div className="max-h-96 overflow-y-auto rounded-xl border bg-muted/30 p-2 animate-in fade-in slide-in-from-top-2">
-            <div className="mb-2 grid grid-cols-2 gap-1">
-              {(["res", "com"] as const).map((k) => (
-                <button key={k} onClick={() => setPresetTab(k)} className={`rounded-lg px-3 py-1.5 text-sm font-bold ${presetTab === k ? "bg-primary text-primary-foreground" : "bg-card border"}`}>{k === "res" ? "منظومات سكنية" : "منظومات تجارية"}</button>))}
-            </div>
-            {[...new Set(PRESETS.filter((p) => (p.type ?? "res") === presetTab).map((p) => p.group))].map((g) => (
-              <div key={g} className="mb-2">
-                <div className="px-2 py-1 text-xs font-bold text-primary">{g}</div>
-                <div className="grid gap-1 sm:grid-cols-2">
-                  {PRESETS.filter((p) => p.group === g).map((p) => (
-                    <button key={p.title} onClick={() => loadPreset(p)} disabled={busy} className="rounded-lg border bg-card px-3 py-2 text-right text-sm font-semibold hover:border-primary hover:shadow disabled:opacity-50">{p.title}</button>))}
-                </div>
-              </div>))}
           </div>
         )}
         <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-5">
