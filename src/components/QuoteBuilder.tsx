@@ -100,9 +100,9 @@ const COMMERCIAL: Preset[] = [
 ];
 PRESETS.push(...COMMERCIAL);
 // Bot formulas (State Machine), fed with daily kWh directly (no ÷30):
-// production = panels × panel W × 5.5 / 1000.
-export const dailyProduction = (p: Preset) => p.panels ? p.panels * (p.pw ?? 720) * 5.5 / 1000 :
-  p.items.reduce((s, [k, q]) => s + (k === "PV_SUNTECH_595" ? q * 595 : k === "PV_SUNTECH_720" ? q * 720 : 0), 0) * 5.5 / 1000;
+// production = panels × panel W × 5 / 1000.
+export const dailyProduction = (p: Preset) => p.panels ? p.panels * (p.pw ?? 720) * 5 / 1000 :
+  p.items.reduce((s, [k, q]) => s + (k === "PV_SUNTECH_595" ? q * 595 : k === "PV_SUNTECH_720" ? q * 720 : 0), 0) * 5 / 1000;
 // ===== Exact copy of the WhatsApp bot selection rules (State Machine) =====
 // Residential: bot RES_TABLE "range" values (Excel), in the same order as the residential presets.
 // Preset #6 (6.2 kW, 4 panels) is bot r6 AND r7 (identical systems), so it carries both ranges.
@@ -149,16 +149,16 @@ export const comOptions = (need: number): Preset[] => {
   }
   return out;
 };
-// Bot entry paths. Residential bill → need = bill ÷ price ÷ 30; above the largest home range → commercial.
+// Bot entry paths. Residential bill → need = bill ÷ price ÷ 26; above the largest home range → commercial.
 export const optionsForResBill = (bill: number, price = DEFAULT_KWH_PRICE): Preset[] => {
-  const need = bill / price / 30;
+  const need = bill / price / 26;
   return need > RES_MAX_DAILY + E ? comOptions(need) : resOptions(need);
 };
 export type ComMethod = "bill" | "kwh" | "diesel";
-// Commercial (com_1 bill / com_2 kWh per month / com_3 diesel litres ÷ 0.27) → kWh/month ÷ 30.
+// Commercial (com_1 bill / com_2 kWh per month / com_3 diesel litres ÷ 0.27) → kWh/month ÷ 26.
 export const optionsForCom = (m: ComMethod, v: number, price = DEFAULT_KWH_PRICE): Preset[] => {
   const kwh = m === "bill" ? v / price : m === "kwh" ? v : v / 0.27;
-  const need = kwh / 30;
+  const need = kwh / 26;
   // Live bot: a commercial need that fits the home range is treated exactly as residential.
   return need <= RES_MAX_DAILY + E ? resOptions(need) : comOptions(need);
 };
@@ -218,7 +218,7 @@ export const tiersDayNight = (t: Tiers | null, night: DayNight, need?: number): 
 };
 // Daily kWh need from the entered amount (same conversions as the bot).
 export const dailyNeed = (path: "res" | "com", m: ComMethod, v: number, price = DEFAULT_KWH_PRICE) =>
-  (path === "res" || m === "bill" ? v / price : m === "kwh" ? v : v / 0.27) / 30;
+  (path === "res" || m === "bill" ? v / price : m === "kwh" ? v : v / 0.27) / 26;
 export const tieredOptions = (path: "res" | "com", m: ComMethod, v: number, price = DEFAULT_KWH_PRICE) =>
   tiersFrom(path === "res" ? optionsForResBill(v, price) : optionsForCom(m, v, price));
 // Bot-style inverter choice for business systems: sizes that cover the need, then single/three phase.

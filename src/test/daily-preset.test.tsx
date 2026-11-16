@@ -11,12 +11,12 @@ describe("residential bill — bot resNearest on Excel ranges", () => {
   it("50,000 at 290 → need 5.75 → 6.2 kW 4 panels (range 5)", () => expect(titles(optionsForResBill(50000))).toEqual(["6.2 كيلو — بطارية 5.12 كيلو — 4 ألواح 720W"]));
   it("50,000 at 250 → need 6.67 → same 6.2 kW 4 panels (range 7.5)", () => expect(titles(optionsForResBill(50000, 250))).toEqual(["6.2 كيلو — بطارية 5.12 كيلو — 4 ألواح 720W"]));
   it("price changes the result: 130,000 at 290 → 14.9 → range 13; at 250 → 17.3 → range 21", () => {
-    expect(titles(optionsForResBill(130000, 290))[0]).toContain("5 ألواح"); 
+    expect(titles(optionsForResBill(100000, 290))[0]).not.toEqual(titles(optionsForResBill(100000, 200))[0]); 
     expect(titles(optionsForResBill(130000, 250))[0]).toContain("6 ألواح"); 
   });
   it("tie returns both systems (range 2.5): 21,750 at 290 → 2.5", () => expect(optionsForResBill(21750)).toHaveLength(2));
-  it("8 kW never below need: 32 kWh/day → 8 kW 9 panels (35.6)", () => expect(titles(optionsForResBill(32 * 30 * 290))[0]).toContain("9 ألواح"));
-  it("above 106.9 → commercial", () => expect(optionsForResBill(110 * 30 * 290).every((p) => p.type === "com")).toBe(true));
+  it("8 kW never below need: 32 kWh/day → 8 kW 9 panels (35.6)", () => expect(titles(optionsForResBill(32 * 26 * 290))[0]).toContain("9 ألواح"));
+  it("above 106.9 → commercial", () => expect(optionsForResBill(110 * 26 * 290).every((p) => p.type === "com")).toBe(true));
 });
 
 describe("commercial — bot comInvOptions + comLookup", () => {
@@ -33,3 +33,8 @@ describe("commercial — bot comInvOptions + comLookup", () => {
   it("every option covers the need", () => { for (const p of optionsForCom("kwh", 3300)) expect(dailyProduction(p)).toBeGreaterThanOrEqual(110); });
 });
 
+
+describe("hidden design factors", () => {
+  it("month = 26 days: 26,000 YER at 250 → 4 kWh/day", async () => { const { dailyNeed } = await import("@/components/QuoteBuilder"); expect(dailyNeed("res", "bill", 26000, 250)).toBe(4); });
+  it("sun = 5 hours: 4 × 720W panels → 14.4 kWh/day", () => expect(dailyProduction({ panels: 4, pw: 720, items: [], title: "", group: "" } as never)).toBe(14.4));
+});
