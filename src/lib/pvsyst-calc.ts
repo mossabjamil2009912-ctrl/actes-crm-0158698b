@@ -45,7 +45,9 @@ export function parseTilt(v: string | number | null | undefined): number | null 
 export type SiteData = { name: string; lat: number; lon: number; alt: number; tilt: number; dir: Direction; globHor: number[]; diffHor: number[]; tAmb: number[]; globInc: number[]; source: string };
 export const SANAA_SITE: SiteData = { name: "Sanaa", lat: SITE.lat, lon: SITE.lon, alt: SITE.alt, tilt: SITE.tilt, dir: "ns", globHor: REF.globHor, diffHor: REF.diffHor, tAmb: REF.tAmb, globInc: REF.globInc, source: "Meteonorm 9.0" };
 
-export type SystemSpec = { kw: number; invCount: number; three: boolean; panels: number; batKwh: number };
+export type SystemSpec = { kw: number; invCount: number; three: boolean; panels: number; batKwh: number; panelW?: number };
+/** Exact kWp text, no rounding (float noise only). */
+export const kwpText = (n: number) => String(Number(n.toFixed(6)));
 
 const digits = (s: string) => s.replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x660));
 
@@ -64,6 +66,8 @@ export function parseSystem(label: string | null | undefined): SystemSpec | null
     three: /3\s*فاز|ثلاث/.test(t),
     panels,
     batKwh: num(/بطاري(?:ة|ات):?\s*(\d+(?:\.\d+)?)/),
+    // Panel wattage as written (e.g. "595W"), else the default module.
+    panelW: num(/(\d{3,4})\s*W\b/i) || PANEL_W,
   };
 }
 
@@ -81,7 +85,7 @@ export function parseOrientation(label: string | null | undefined): { tilt: numb
 const r = (n: number, d = 0) => Math.round(n * 10 ** d) / 10 ** d;
 
 export function simulate(s: SystemSpec, site: SiteData = SANAA_SITE) {
-  const kwp = r((s.panels * PANEL_W) / 1000, 2);
+  const kwp = (s.panels * (s.panelW || PANEL_W)) / 1000;
   const toUser = REF.produced / REF.eArray.reduce((a, b) => a + b, 0);
   // Output to the user = kWp × plane irradiation × PR (the reference run's PR: 285.12 × 2338.5 × 0.8651 = 576,816 kWh).
   const eGrid = site.globInc.map((g) => r(kwp * g * PR));

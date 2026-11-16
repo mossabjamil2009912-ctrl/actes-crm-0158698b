@@ -6,7 +6,7 @@ import { SANS_BOLD_B64 } from "@/lib/report-assets/sans-bold";
 import { FONT_B64 } from "@/lib/report-assets/font";
 import { LOGO_B64 } from "@/lib/report-assets/logo";
 import { shapeArabic } from "@/lib/arabic-shape";
-import { SITE, MONTHS, LOSSES, PANEL_W, simulate, aspectsOf, SANAA_SITE, type SystemSpec, type Sim, type SiteData } from "@/lib/pvsyst-calc";
+import { SITE, MONTHS, LOSSES, PANEL_W, simulate, kwpText, aspectsOf, SANAA_SITE, type SystemSpec, type Sim, type SiteData } from "@/lib/pvsyst-calc";
 import { PVSYST_LOGO_B64 } from "@/lib/report-assets/pvsyst-logo";
 
 const W = 595, H = 842, M = 40;
@@ -70,7 +70,7 @@ export async function buildReport(name: string, spec: SystemSpec, site: SiteData
     doc, name: shapeArabic(name), src: site.source, date, total: 6,
     f: await doc.embedFont(b64(SANS_B64), { subset: false }), b: await doc.embedFont(b64(SANS_BOLD_B64), { subset: false }),
     u: await doc.embedFont(b64(FONT_B64), { subset: false }), logo: await doc.embedPng(b64(LOGO_B64)), pv: await doc.embedPng(b64(PVSYST_LOGO_B64)),
-    variant: `Hybrid System ${Math.round(s.kwp)} KWp`,
+    variant: `Hybrid System ${kwpText(s.kwp)} KWp`,
   };
   doc.setTitle(`${name} - Simulation report`); doc.setAuthor("ACTES");
   const invName = `Solis ${spec.kw} kW${spec.three ? " 3-phase" : ""}`;
@@ -101,7 +101,7 @@ export async function buildReport(name: string, spec: SystemSpec, site: SiteData
     txt(p, "Grid-Connected System", M + 8, y - 16, c.b, 7); txt(p, "Sheds on a building", M + 175, y - 16, c.b, 7);
     rows(c, p, M + 8, y - 30, orient(0), 120);
     rows(c, p, M + 175, y - 30, orient(1), 120);
-    txt(p, "PV Array", M + 8, y - 62, c.b, 7); rows(c, p, M + 8, y - 72, [["Nb. of modules", `${spec.panels} units`], ["Pnom total", `${fmt(s.kwp, 1)} kWp`]], 110);
+    txt(p, "PV Array", M + 8, y - 62, c.b, 7); rows(c, p, M + 8, y - 72, [["Nb. of modules", `${spec.panels} units`], ["Pnom total", `${kwpText(s.kwp)} kWp`]], 110);
     txt(p, "Inverters", M + 175, y - 62, c.b, 7); rows(c, p, M + 175, y - 72, [["Nb. of units", `${spec.invCount} units`], ["Total power", `${s.acKw} kWac`], ["Pnom ratio", fmt(s.pnomRatio, 2)]], 110);
     txt(p, "Battery pack", M + 350, y - 62, c.b, 7); rows(c, p, M + 350, y - 72, [["Storage strategy", "Self-consumption"], ["Voltage", `${s.battery.v} V`], ["Capacity", `${fmt(s.battery.ah)} Ah`], ["Energy", `${s.battery.kwh} kWh`]], 150);
     y -= 145; box(c, p, "Results summary", y, 50);
@@ -127,7 +127,7 @@ export async function buildReport(name: string, spec: SystemSpec, site: SiteData
     });
     y -= 140; box(c, p, "PV Array Characteristics", y, 175);
     txt(p, "PV module", M + 8, y - 16, c.b, 7);
-    rows(c, p, M + 8, y - 26, [["Manufacturer", "Suntech"], ["Model", "STP720S-D66-Nsh+"], ["Unit Nom. Power", `${PANEL_W} Wp`], ["Number of PV modules", `${spec.panels} units`], ["Nominal (STC)", `${fmt(s.kwp, 1)} kWp`], ["Modules", `${s.strings} string x ${s.series} in series`], ["Module area", `${fmt(s.area)} m²`]], 200);
+    rows(c, p, M + 8, y - 26, [["Manufacturer", "Suntech"], ["Model", "STP720S-D66-Nsh+"], ["Unit Nom. Power", `${spec.panelW || PANEL_W} Wp`], ["Number of PV modules", `${spec.panels} units`], ["Nominal (STC)", `${kwpText(s.kwp)} kWp`], ["Modules", `${s.strings} string x ${s.series} in series`], ["Module area", `${fmt(s.area)} m²`]], 200);
     txt(p, "Inverter", M + 270, y - 16, c.b, 7);
     rows(c, p, M + 270, y - 26, [["Manufacturer", "Solis"], ["Model", invName], ["Unit Nom. Power", `${spec.kw} kWac`], ["Number of inverters", `${spec.invCount} units`], ["Total power", `${s.acKw} kWac`], ["Pnom ratio (DC:AC)", fmt(s.pnomRatio, 2)]], 230);
     txt(p, "Battery", M + 8, y - 110, c.b, 7);

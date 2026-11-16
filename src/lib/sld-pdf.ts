@@ -8,6 +8,7 @@ import { LOGO_B64 } from "@/lib/report-assets/logo";
 import { shapeArabic } from "@/lib/arabic-shape";
 import type { SystemSpec } from "@/lib/pvsyst-calc";
 import { design, PANEL } from "@/lib/sld-calc";
+import { kwpText } from "@/lib/pvsyst-calc";
 
 const W = 1300, H = 460;
 const hex = (h: string) => rgb(parseInt(h.slice(1, 3), 16) / 255, parseInt(h.slice(3, 5), 16) / 255, parseInt(h.slice(5, 7), 16) / 255);
@@ -69,13 +70,13 @@ export async function buildSld(name: string, spec: SystemSpec, when = new Date()
   t(c, `Single Line Diagram — ${date}`, W - lw - 26, 36, 7, MUTED, false, "r");
 
   // ---- DC side
-  t(c, `DC SIDE — PV ARRAY ${f1(d.kwp)} kWp`, 28, 28, 9, DC, true);
+  t(c, `DC SIDE — PV ARRAY ${kwpText(d.kwp)} kWp`, 28, 28, 9, DC, true);
   const shown = Math.min(6, d.strings);
   const dcX = 258, dcY = 42, dcW = 120, dcH = 215;
   for (let i = 0; i < shown; i++) {
     const y = 48 + i * 36;
     panelIcon(c, 28, y);
-    t(c, `String ${i + 1} — ${d.perString} x ${PANEL.w} Wp`, 108, y + 2, 6.5);
+    t(c, `String ${i + 1} — ${d.perString} x ${d.panelW} Wp`, 108, y + 2, 6.5);
     line(c, 104, y + 10, dcX, y + 10, DC, 1.2);
     t(c, "+", 110, y + 21, 6.5, DC, true); t(c, "–", 122, y + 21, 6.5, WHITE);
   }

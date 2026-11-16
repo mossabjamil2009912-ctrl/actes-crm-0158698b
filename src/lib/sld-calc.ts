@@ -23,7 +23,8 @@ export function design(s: SystemSpec) {
   const perString = Math.ceil(panels / strings);
   const voc = Math.floor(perString * PANEL.voc);
   const vmp = perString * PANEL.vmp;
-  const kwp = (panels * PANEL.w) / 1000;
+  const panelW = s.panelW || PANEL.w;
+  const kwp = (panels * panelW) / 1000;
   const totalKw = s.kw * s.invCount;
   const batV = three ? 512 : 51.2;
   const batModule = three ? 16 : 5;
@@ -49,7 +50,7 @@ export function design(s: SystemSpec) {
     return ids;
   });
   return {
-    three, mppt, mpptInputs, strings, perString, panels, kwp, voc, vmp, vocOk: voc * COLD <= mppt.max && vmp >= mppt.min,
+    three, mppt, mpptInputs, strings, perString, panels, panelW, kwp, voc, vmp, vocOk: voc * COLD <= mppt.max && vmp >= mppt.min,
     totalKw, invCount: s.invCount, kw: s.kw, batV, batModule, batCount, batKwh: batCount * batModule, batI, batBreaker, batMm2,
     acI: Math.round(acI), acBreaker, acMm2, strMm2, drops, mpptMap, ct: acBreaker <= 100 ? 100 : acBreaker <= 200 ? 200 : 400,
   };
