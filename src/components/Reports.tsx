@@ -128,6 +128,7 @@ export function Reports({ pw, autoOpenId, onAutoOpened }: { pw: string; autoOpen
                 </div>
                 <span dir="ltr" className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"><Phone className="h-3 w-3" />+{r.phone}</span>
                 {r.system_label && <p className="mt-1 text-xs">المنظومة: {r.system_label}</p>}
+                {Array.isArray((r as { loads?: unknown }).loads) && <p className="mt-1 text-xs font-semibold text-primary">⏱ أحمال مفصلة بالساعة (24h) — {((r as { loads: number[] }).loads).reduce((a, b) => a + (+b || 0), 0).toFixed(1)} ك.و.س/يوم</p>}
                 {r.kind === "pvsyst" && (r.city || r.azimuth || r.tilt != null) && (
                   <p className="mt-1 text-xs text-muted-foreground">
                     {[r.city && CITY_AR[r.city], r.azimuth && `الاتجاه: ${DIR_LABEL[r.azimuth as Direction] ?? r.azimuth}`, `الميلان: ${r.tilt != null ? `${r.tilt}°` : "الأنسب"}`].filter(Boolean).join(" · ")}

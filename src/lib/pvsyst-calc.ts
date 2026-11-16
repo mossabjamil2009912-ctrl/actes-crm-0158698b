@@ -45,7 +45,7 @@ export function parseTilt(v: string | number | null | undefined): number | null 
 export type SiteData = { name: string; lat: number; lon: number; alt: number; tilt: number; dir: Direction; globHor: number[]; diffHor: number[]; tAmb: number[]; globInc: number[]; source: string };
 export const SANAA_SITE: SiteData = { name: "Sanaa", lat: SITE.lat, lon: SITE.lon, alt: SITE.alt, tilt: SITE.tilt, dir: "ns", globHor: REF.globHor, diffHor: REF.diffHor, tAmb: REF.tAmb, globInc: REF.globInc, source: "Meteonorm 9.0" };
 
-export type SystemSpec = { kw: number; invCount: number; three: boolean; panels: number; batKwh: number; panelW?: number };
+export type SystemSpec = { kw: number; invCount: number; three: boolean; panels: number; batKwh: number; panelW?: number; loads?: number[] | null };
 /** Exact kWp text, no rounding (float noise only). */
 export const kwpText = (n: number) => String(Number(n.toFixed(6)));
 
@@ -92,7 +92,10 @@ export function simulate(s: SystemSpec, site: SiteData = SANAA_SITE) {
   const eArray = eGrid.map((e) => r(e / toUser));
   const globEff = site.globInc.map((g, i) => r(g * (REF.globEff[i]! / REF.globInc[i]!), 1));
   const produced = eGrid.reduce((a, b) => a + b, 0);
-  const dailyNeed = Math.min(produced / 365, Math.max(s.batKwh * 0.9 + kwp * 1.5, kwp * 2));
+  // Customer's own 24 hourly loads (kW) give the real daily need; otherwise estimate from the system size.
+  const hourly = s.loads && s.loads.length === 24 && s.loads.some((v) => v > 0) ? s.loads.map((v) => Math.max(0, +v || 0)) : null;
+  const loadDay = hourly ? hourly.reduce((a, b) => a + b, 0) : 0;
+  const dailyNeed = hourly ? loadDay : Math.min(produced / 365, Math.max(s.batKwh * 0.9 + kwp * 1.5, kwp * 2));
   const eUser = DAYS.map((d) => r(dailyNeed * d));
   const used = eUser.reduce((a, b) => a + b, 0);
   const prMonth = site.globInc.map(() => r(PR, 3));
@@ -105,7 +108,8 @@ export function simulate(s: SystemSpec, site: SiteData = SANAA_SITE) {
     site, globEff, kwp, acKw, produced, used,
     specific: r(produced / kwp),
     pr: r(PR * 100, 2),
-    sf: 100,
+    sf: hourly ? r(Math.min(100, (produced / used) * 100), 2) : 100,
+    hourly, loadDay: r(loadDay, 2), loadPeak: hourly ? Math.max(...hourly) : 0,
     pnomRatio: r(kwp / acKw, 2),
     eArray, eGrid, eUser, prMonth,
     needsMwh: eUser.map((e) => r(e / 1000, 2)),

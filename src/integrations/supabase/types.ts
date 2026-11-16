@@ -663,6 +663,7 @@ export type Database = {
           id: string
           kind: string
           lat: number | null
+          loads: Json | null
           lon: number | null
           name: string | null
           phone: string
@@ -681,6 +682,7 @@ export type Database = {
           id?: string
           kind?: string
           lat?: number | null
+          loads?: Json | null
           lon?: number | null
           name?: string | null
           phone: string
@@ -699,6 +701,7 @@ export type Database = {
           id?: string
           kind?: string
           lat?: number | null
+          loads?: Json | null
           lon?: number | null
           name?: string | null
           phone?: string

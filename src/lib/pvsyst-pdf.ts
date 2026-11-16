@@ -121,7 +121,8 @@ export async function buildReport(name: string, spec: SystemSpec, site: SiteData
   {
     const p = page(c, 3);
     let y = H - 95;
-    box(c, p, "General parameters", y, 120);
+    const extra = s.hourly ? 30 : 0;
+    box(c, p, "General parameters", y, 120 + extra);
     rows(c, p, M + 8, y - 18, [...orient(0), ["Nb. of sheds", `${az.length === 1 ? s.shedsSouth + s.shedsNorth : s.shedsSouth} units`], ["Sheds spacing", "5.00 m"], ["Sensitive width", "2.38 m"], ["GCR", "48.1 %"]], 150);
     rows(c, p, M + 190, y - 18, [...orient(1), ["Nb. of sheds", az[1] == null ? "-" : `${s.shedsNorth} units`], ["Sheds spacing", "5.00 m"], ["Sensitive width", "2.38 m"], ["GCR", "48.1 %"]], 150);
     rows(c, p, M + 370, y - 18, [["Models used", ""], ["Transposition", "Perez"], ["Diffuse", "Perez, Meteonorm"], ["Horizon", "Free Horizon"], ["Bifaciality factor", "80 %"]], 130);
@@ -131,7 +132,15 @@ export async function buildReport(name: string, spec: SystemSpec, site: SiteData
       txt(p, m, M + 8 + i * cw + cw / 2, y - 100, c.b, 6, INK, "c");
       txt(p, i < 12 ? fmt(s.needsMwh[i]!, 2) : fmt(s.used / 1000, 1), M + 8 + i * cw + cw / 2, y - 110, c.f, 6, INK, "c");
     });
-    y -= 140; box(c, p, "PV Array Characteristics", y, 175);
+    if (s.hourly) {
+      txt(p, `Customer hourly loads (kW) - Daily ${fmt(s.loadDay, 2)} kWh, Peak ${fmt(s.loadPeak, 2)} kW`, M + 8, y - 122, c.b, 7);
+      const hw = (W - 2 * M - 16) / 24;
+      s.hourly.forEach((v, i) => {
+        txt(p, String(i).padStart(2, "0"), M + 8 + i * hw + hw / 2, y - 132, c.b, 5, INK, "c");
+        txt(p, fmt(v, 1), M + 8 + i * hw + hw / 2, y - 141, c.f, 5, INK, "c");
+      });
+    }
+    y -= 140 + extra; box(c, p, "PV Array Characteristics", y, 175);
     txt(p, "PV module", M + 8, y - 16, c.b, 7);
     rows(c, p, M + 8, y - 26, [["Manufacturer", panelBrand], ["Model", panelModel], ["Unit Nom. Power", `${spec.panelW || PANEL_W} Wp`], ["Number of PV modules", `${spec.panels} units`], ["Nominal (STC)", `${kwpText(s.kwp)} kWp`], ["Modules", `${s.strings} string x ${s.series} in series`], ["Module area", `${fmt(s.area)} m²`]], 200);
     txt(p, "Inverter", M + 270, y - 16, c.b, 7);
