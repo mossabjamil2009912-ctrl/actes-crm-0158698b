@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import type { PDFDocumentProxy } from "pdfjs-dist";
 import { RotateCw, ZoomIn, ZoomOut } from "lucide-react";
 
 // Renders every PDF page as a sharp image so phones show it inline.
@@ -8,14 +9,21 @@ export function PdfView({ url }: { url: string }) {
   const [err, setErr] = useState("");
   const [rotate, setRotate] = useState<boolean | null>(null);
   const [zoom, setZoom] = useState(1);
+  const docRef = useRef<{ url: string; doc: Promise<PDFDocumentProxy> } | null>(null);
   useEffect(() => {
     let dead = false;
     (async () => {
       try {
-        const pdfjs = await import("pdfjs-dist");
-        const worker = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url")).default;
-        pdfjs.GlobalWorkerOptions.workerSrc = worker;
-        const doc = await pdfjs.getDocument({ url, standardFontDataUrl: "/pdf-fonts/", useSystemFonts: false, disableFontFace: true }).promise;
+        // Load the file once per url; rotating or re-rendering reuses it.
+        if (docRef.current?.url !== url) {
+          docRef.current = { url, doc: (async () => {
+            const pdfjs = await import("pdfjs-dist");
+            const worker = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url")).default;
+            pdfjs.GlobalWorkerOptions.workerSrc = worker;
+            return pdfjs.getDocument({ url, standardFontDataUrl: "/pdf-fonts/", useSystemFonts: false, disableFontFace: true }).promise;
+          })() };
+        }
+        const doc = await docRef.current.doc;
         const el = box.current;
         if (!el || dead) return;
         const first = (await doc.getPage(1)).getViewport({ scale: 1 });
@@ -26,8 +34,9 @@ export function PdfView({ url }: { url: string }) {
         for (let i = 1; i <= doc.numPages && !dead; i++) {
           const page = await doc.getPage(i);
           const base = page.getViewport({ scale: 1, rotation: turn ? 90 : 0 });
-          // Render at ~3000px wide (capped) so zooming in keeps lines and text sharp.
-          const scale = Math.min(4, Math.max(2, 3000 / base.width));
+          // Size to the screen (x2 for zoom headroom), capped so phones render quickly.
+          const target = Math.min(2200, Math.max(1200, el.clientWidth * (window.devicePixelRatio || 1) * 1.5));
+          const scale = target / base.width;
           const vp = page.getViewport({ scale, rotation: turn ? 90 : 0 });
           const c = document.createElement("canvas");
           c.width = Math.floor(vp.width); c.height = Math.floor(vp.height);

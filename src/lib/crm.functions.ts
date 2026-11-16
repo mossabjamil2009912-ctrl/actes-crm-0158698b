@@ -467,7 +467,7 @@ export const openPresetReport = createServerFn({ method: "POST" })
     return { url: sig.data.signedUrl };
   });
 
-async function requestFile(supabaseAdmin: any, rq: { id: string; name: string | null; city?: string | null; lat?: number | null; lon?: number | null; tilt?: number | null; azimuth?: string | null; file_path: string | null; file_name: string | null; kind: string; system_label: string | null }) {
+export async function requestFile(supabaseAdmin: any, rq: { id: string; name: string | null; city?: string | null; lat?: number | null; lon?: number | null; tilt?: number | null; azimuth?: string | null; file_path: string | null; file_name: string | null; kind: string; system_label: string | null }) {
   // Generated reports made before fonts were embedded (no "/v3-" in path) are rebuilt once.
   const stale = !!rq.file_path && rq.file_path.startsWith("reports/requests/") && !rq.file_path.includes("/v3-") && (rq.kind === "sld" || rq.kind === "pvsyst");
   if (rq.file_path && !stale) return { path: rq.file_path, file_name: rq.file_name ?? "report.pdf" };
@@ -517,6 +517,11 @@ async function requestFile(supabaseAdmin: any, rq: { id: string; name: string | 
   const t = matchPreset(rq.system_label, rows.map((r) => r.preset_title));
   const f = rows.find((r) => r.preset_title === t);
   return f ? { path: f.path, file_name: f.file_name } : null;
+}
+
+/** Builds a new request's report right away so staff open it instantly; failures fall back to building on open. */
+export async function prewarmReport(supabaseAdmin: any, rq: any) {
+  try { if (rq) await requestFile(supabaseAdmin, rq); } catch (e) { console.error("report prewarm failed", e); }
 }
 
 export const uploadRequestReport = createServerFn({ method: "POST" })

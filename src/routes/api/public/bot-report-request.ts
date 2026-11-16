@@ -34,11 +34,13 @@ export const Route = createFileRoute("/api/public/bot-report-request")({
         const phone = p.data.phone.replace(/\D/g, "");
         const { supabaseAdmin } = await import("@/lib/db.server");
         const { data: c } = await supabaseAdmin.from("customers").select("id").like("phone", `%${phone.slice(-9)}`).limit(1).maybeSingle();
-        const { error } = await supabaseAdmin.from("report_requests").insert({
+        const { data: rq, error } = await supabaseAdmin.from("report_requests").insert({
           phone, customer_id: c?.id ?? null, name: p.data.name, system_label: p.data.system, kind: p.data.kind,
           city: p.data.city ?? null, lat: p.data.lat ?? null, lon: p.data.lon ?? null, tilt: parseTilt(p.data.tilt), azimuth: p.data.azimuth ?? null,
-        });
+        }).select("*").single();
         if (error) return new Response(error.message, { status: 500 });
+        const { prewarmReport } = await import("@/lib/crm.functions");
+        await prewarmReport(supabaseAdmin, rq);
         return Response.json({ ok: true });
       },
     },

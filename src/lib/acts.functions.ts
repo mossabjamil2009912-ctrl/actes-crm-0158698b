@@ -44,7 +44,9 @@ export const actsQuoteRequest = createServerFn({ method: "POST" })
     const id = await customerFor(data.phone, data.name, data.city, msg, "quote");
     const sb = await db();
     for (const kind of data.reports) {
-      await sb.from("report_requests").insert({ phone: digits(data.phone), customer_id: id, name: data.name, system_label: data.system, kind, city: null });
+      const { data: rq } = await sb.from("report_requests").insert({ phone: digits(data.phone), customer_id: id, name: data.name, system_label: data.system, kind, city: null }).select("*").single();
+      const { prewarmReport } = await import("@/lib/crm.functions");
+      await prewarmReport(sb, rq);
     }
     if (data.system.includes("قياس أحمال")) {
       const loc = data.system.split("الموقع:")[1]?.trim() || data.city;
@@ -226,7 +228,9 @@ export const actsReportRequest = createServerFn({ method: "POST" })
     const msg = `📱 طلب ${data.kind === "pvsyst" ? "تقرير PVsyst" : "مخطط SLD"} من تطبيق ACTS\nالمنظومة: ${data.system}`;
     const id = await customerFor(data.phone, data.name, data.city, msg, "quote");
     const sb = await db();
-    await sb.from("report_requests").insert({ phone: digits(data.phone), customer_id: id, name: data.name, system_label: data.system, kind: data.kind, city: data.city });
+    const { data: rq } = await sb.from("report_requests").insert({ phone: digits(data.phone), customer_id: id, name: data.name, system_label: data.system, kind: data.kind, city: data.city }).select("*").single();
+    const { prewarmReport } = await import("@/lib/crm.functions");
+    await prewarmReport(sb, rq);
     return { ok: true };
   });
 
