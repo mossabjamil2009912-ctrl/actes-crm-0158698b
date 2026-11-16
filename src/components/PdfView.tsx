@@ -11,6 +11,9 @@ export function PdfView({ url }: { url: string }) {
   const [zoom, setZoom] = useState(1);
   const scroller = useRef<HTMLDivElement>(null);
   const zoomRef = useRef(1);
+  // Zoom level the pages were last drawn for; redrawn sharp shortly after zooming stops.
+  const [sharpZoom, setSharpZoom] = useState(1);
+  useEffect(() => { const t = setTimeout(() => setSharpZoom(zoom), 300); return () => clearTimeout(t); }, [zoom]);
   zoomRef.current = zoom;
   // Zoom around a screen point (mouse/fingers) so the spot under it stays put.
   const zoomAt = (next: number, cx?: number, cy?: number) => {
@@ -87,24 +90,29 @@ export function PdfView({ url }: { url: string }) {
         const portraitScreen = window.innerHeight > window.innerWidth;
         const turn = rotate ?? (first.width > first.height * 1.3 && portraitScreen);
         if (rotate === null) { setRotate(turn); return; }
-        el.innerHTML = "";
+        const out: HTMLCanvasElement[] = [];
+        const dpr = window.devicePixelRatio || 1;
         for (let i = 1; i <= doc.numPages && !dead; i++) {
           const page = await doc.getPage(i);
           const base = page.getViewport({ scale: 1, rotation: turn ? 90 : 0 });
-          // Size to the screen (x2 for zoom headroom), capped so phones render quickly.
-          const target = Math.min(2200, Math.max(1200, el.clientWidth * (window.devicePixelRatio || 1) * 1.5));
+          // Match real screen pixels at the current zoom, capped per page to protect phone memory.
+          const want = Math.max(1200, el.clientWidth * dpr);
+          const maxPx = 16_000_000, ratio = base.height / base.width;
+          const target = Math.min(want, 8000, Math.sqrt(maxPx / ratio));
           const scale = target / base.width;
           const vp = page.getViewport({ scale, rotation: turn ? 90 : 0 });
           const c = document.createElement("canvas");
           c.width = Math.floor(vp.width); c.height = Math.floor(vp.height);
           c.style.cssText = "width:100%;height:auto;display:block;margin-bottom:8px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2)";
-          el.appendChild(c);
           await page.render({ canvasContext: c.getContext("2d")!, viewport: vp }).promise;
+          out.push(c);
         }
+        // Swap in the sharp pages all at once so nothing flickers.
+        if (!dead) el.replaceChildren(...out);
       } catch (e) { if (!dead) setErr((e as Error).message); }
     })();
     return () => { dead = true; };
-  }, [url, rotate]);
+  }, [url, rotate, sharpZoom]);
   const btn = "flex h-9 w-9 items-center justify-center rounded-full bg-card text-foreground shadow border border-border";
   return (
     <div ref={scroller} className="relative min-h-0 w-full flex-1 cursor-grab overflow-auto bg-muted p-2 select-none" style={{ touchAction: "pan-x pan-y" }}>
