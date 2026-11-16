@@ -493,15 +493,17 @@ export async function requestFile(supabaseAdmin: any, rq: { id: string; name: st
     const spec = parseSystem(rq.system_label);
     if (spec) {
       const { buildReport } = await import("@/lib/pvsyst-pdf");
-      const { CITIES, SANAA_SITE } = await import("@/lib/pvsyst-calc");
+      const { CITIES, SANAA_SITE, parseOrientation } = await import("@/lib/pvsyst-calc");
       const name = (rq.name ?? "").trim() || "Customer";
-      const dir = (["s", "n", "e", "w", "ns", "ew"].includes(rq.azimuth ?? "") ? rq.azimuth : "s") as "s";
+      const fromText = parseOrientation(rq.system_label);
+      const dir = (["s", "n", "e", "w", "ns", "ew"].includes(rq.azimuth ?? "") ? rq.azimuth : fromText.dir ?? "s") as "s";
+      const tilt = rq.tilt ?? fromText.tilt;
       const city = CITIES[rq.city ?? ""];
       const loc = rq.lat != null && rq.lon != null ? { name: city?.name ?? "Site", lat: rq.lat, lon: rq.lon } : city ?? CITIES["sanaa"]!;
       let site = SANAA_SITE;
       try {
         const { fetchSite } = await import("@/lib/pvgis.server");
-        site = await fetchSite({ ...loc, tilt: rq.tilt ?? null, dir });
+        site = await fetchSite({ ...loc, tilt: tilt ?? null, dir });
       } catch (e) { console.error("PVGIS failed, using Sanaa reference data", e); }
       const bin = await buildReport(name, spec, site);
       const path = `reports/requests/${rq.id}/v4-${crypto.randomUUID()}.pdf`;

@@ -48,3 +48,12 @@ describe("customer site choices", () => {
     expect(low.produced).toBeLessThan(simulate(spec).produced);
   });
 });
+
+import { parseOrientation } from "@/lib/pvsyst-calc";
+describe("tilt and direction from request text", () => {
+  it("reads tilt and direction", () => {
+    expect(parseOrientation("8 ألواح 720W — ميلان 15 — اتجاه جنوب")).toEqual({ tilt: 15, dir: "s" });
+    expect(parseOrientation("زاوية ٢٠° شرق وغرب")).toEqual({ tilt: 20, dir: "ew" });
+    expect(parseOrientation("8 ألواح 720W")).toEqual({ tilt: null, dir: null });
+  });
+});

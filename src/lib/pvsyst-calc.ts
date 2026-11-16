@@ -67,6 +67,17 @@ export function parseSystem(label: string | null | undefined): SystemSpec | null
   };
 }
 
+/** Tilt ("ميلان 15" / "زاوية 15°") and direction ("جنوب وشمال", "شرق") written in a request's text. */
+export function parseOrientation(label: string | null | undefined): { tilt: number | null; dir: Direction | null } {
+  const t = digits(label ?? "");
+  const m = t.match(/(?:ميل(?:ان)?|زاوية)[^\d]{0,12}(\d+(?:[.،]\d+)?)/) || t.match(/(\d+(?:\.\d+)?)\s*°/);
+  const tilt = m?.[1] ? parseTilt(m[1]) : null;
+  const has = (w: string) => t.includes(w);
+  const dir: Direction | null = has("جنوب") && has("شمال") ? "ns" : has("شرق") && has("غرب") ? "ew"
+    : has("جنوب") ? "s" : has("شمال") ? "n" : has("شرق") ? "e" : has("غرب") ? "w" : null;
+  return { tilt, dir };
+}
+
 const r = (n: number, d = 0) => Math.round(n * 10 ** d) / 10 ** d;
 
 export function simulate(s: SystemSpec, site: SiteData = SANAA_SITE) {
