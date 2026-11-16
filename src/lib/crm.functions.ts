@@ -129,14 +129,23 @@ export const ensureCustomerByPhone = createServerFn({ method: "POST" })
 export const sendAttachment = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({
     pw: z.string(), id: z.string().uuid(), text: z.string().max(1024).default(""),
-    file_name: z.string().min(1).max(200), mime: z.string().max(120), b64: z.string().max(23_000_000),
+    file_name: z.string().min(1).max(200), mime: z.string().max(120), b64: z.string().max(23_000_000).default(""), url: z.string().url().max(2000).optional(),
   }).parse(d))
   .handler(async ({ data }) => {
     check(data.pw);
     const { supabaseAdmin } = await import("@/lib/db.server");
     const { data: c, error } = await supabaseAdmin.from("customers").select("phone").eq("id", data.id).single();
     if (error || !c) throw new Error("العميل غير موجود");
-    const bin = Uint8Array.from(atob(data.b64), (ch) => ch.charCodeAt(0));
+    let bin: Uint8Array;
+    if (data.url) {
+      if (!/^https:\/\//.test(data.url)) throw new Error("رابط غير مسموح");
+      const r = await fetch(data.url);
+      if (!r.ok) throw new Error("تعذّر جلب الملف");
+      const ct = r.headers.get("content-type") || "";
+      if (ct) data.mime = ct.split(";")[0]!.trim();
+      bin = new Uint8Array(await r.arrayBuffer());
+      if (bin.length > 16 * 1024 * 1024) throw new Error("حجم الملف أكبر من 16MB");
+    } else bin = Uint8Array.from(atob(data.b64), (ch) => ch.charCodeAt(0));
     const ext = (data.file_name.split(".").pop() ?? "bin").replace(/[^A-Za-z0-9]/g, "").slice(0, 8) || "bin";
     const path = `${data.id}/${crypto.randomUUID()}.${ext}`;
     const up = await supabaseAdmin.storage.from("crm-attachments").upload(path, bin, { contentType: data.mime || "application/octet-stream" });

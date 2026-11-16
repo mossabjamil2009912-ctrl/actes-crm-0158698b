@@ -553,7 +553,21 @@ function Chat({ pw, c, onBack, onInfo }: { pw: string; c: Cust; onBack: () => vo
   const fileIn = useRef<HTMLInputElement>(null);
   const [sending, setSending] = useState(false);
   const [err, setErr] = useState("");
+  const [over, setOver] = useState(false);
   const pending = usePending(c.id);
+  const onDrop = async (e: React.DragEvent) => {
+    e.preventDefault(); setOver(false);
+    const f = e.dataTransfer.files?.[0];
+    if (f) { if (f.size > 16 * 1024 * 1024) { setErr("حجم الملف أكبر من 16MB"); return; } setErr(""); setFile(f); return; }
+    const raw = (e.dataTransfer.getData("text/uri-list") || e.dataTransfer.getData("text/plain") || "").split("\n").find((l) => /^https?:\/\//.test(l.trim()))?.trim();
+    if (!raw) return;
+    if (!/\.pdf(\?|#|$)/i.test(raw)) { setText((t) => (t ? t + "\n" : "") + raw); return; }
+    const name = decodeURIComponent(raw.split(/[?#]/)[0]!.split("/").pop() || "catalog.pdf");
+    setSending(true); setErr("");
+    try { await sendFile({ data: { pw, id: c.id, text: text.trim(), file_name: name, mime: "application/pdf", url: raw } }); setText(""); await refetch(); }
+    catch (x) { setErr(x instanceof Error ? x.message : "تعذّر الإرسال"); }
+    finally { setSending(false); }
+  };
   const { data: msgs = [], refetch } = useQuery(offlineQuery({
     queryKey: ["messages", c.id],
     queryFn: () => get({ data: { pw, id: c.id } }),
@@ -573,7 +587,8 @@ function Chat({ pw, c, onBack, onInfo }: { pw: string; c: Cust; onBack: () => vo
   return (
     <>
       <div className="flex h-full flex-1 justify-center overflow-hidden md:py-0">
-      <div className="relative flex h-full w-full flex-col overflow-hidden bg-phone shadow-2xl md:aspect-[9/19] md:w-auto md:rounded-[2.6rem] md:border-[10px] md:border-phone">
+      <div onDragOver={(e) => { e.preventDefault(); setOver(true); }} onDragLeave={(e) => { if (e.currentTarget === e.target) setOver(false); }} onDrop={onDrop} className="relative flex h-full w-full flex-col overflow-hidden bg-phone shadow-2xl md:aspect-[9/19] md:w-auto md:rounded-[2.6rem] md:border-[10px] md:border-phone">
+        {over && <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-primary/30 text-sm font-bold text-primary-foreground">أفلت الكتالوج هنا للإرسال</div>}
         <div className="absolute left-1/2 top-1.5 z-20 hidden h-5 w-24 -translate-x-1/2 rounded-full bg-phone md:block" />
         <div className="flex items-center gap-1 bg-wa-bar px-2 py-1 text-wa-text md:pt-6">
           <button onClick={onBack} aria-label="رجوع" className="lg:hidden"><ArrowRight className="h-4 w-4" /></button>
