@@ -113,7 +113,7 @@ function QuoteFlow() {
         </>}
         {step === 2 && <>
           <h2 className="font-bold">كيف تتوزع ساعات استخدامك للكهرباء؟</h2>
-          <div className="grid gap-2">{([[50, "50% نهار / 50% ليل"], [30, "70% نهار / 30% ليل"], [70, "30% نهار / 70% ليل"]] as const).map(([k, l]) => <button key={k} onClick={() => { setNight(k); setStep(3); }} className={`rounded-xl border p-3 text-sm font-semibold ${night === k ? "border-primary" : "border-border"}`}>{l}</button>)}</div>
+          <div className="grid gap-2">{([[50, "50% نهار / 50% ليل"], [30, "70% نهار / 30% ليل"], [70, "30% نهار / 70% ليل"]] as const).filter(([k]) => !(path === "res" && k === 30)).map(([k, l]) => <button key={k} onClick={() => { setNight(k); setStep(3); }} className={`rounded-xl border p-3 text-sm font-semibold ${night === k ? "border-primary" : "border-border"}`}>{l}</button>)}</div>
           <button className="text-sm" onClick={() => setStep(1)}>رجوع</button>
         </>}
         {step === 3 && <>

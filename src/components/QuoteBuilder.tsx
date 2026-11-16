@@ -595,12 +595,12 @@ export function QuoteBuilder({ pw, initialCustomerId }: { pw: string; initialCus
           <h2 className="flex items-center gap-2 text-lg font-bold"><FilePlus2 className="h-5 w-5 text-primary" />إنشاء عرض سعر</h2>
           <div className="mr-auto flex flex-wrap items-center gap-1">
             {(["res", "com"] as const).map((k) => (
-              <button key={k} type="button" onClick={() => { setPath(path === k ? null : k); setComM(null); setTiers(null); setInvs(null); setInvKw(null); setDaily(""); }} className={`rounded-lg px-3 py-1.5 text-xs font-bold ${path === k ? "bg-primary text-primary-foreground" : "bg-muted hover:bg-muted/70"}`}>{k === "res" ? "سكني" : "تجاري"}</button>
+              <button key={k} type="button" onClick={() => { setPath(path === k ? null : k); if (k === "res" && dn === 30) setDn(50); setComM(null); setTiers(null); setInvs(null); setInvKw(null); setDaily(""); }} className={`rounded-lg px-3 py-1.5 text-xs font-bold ${path === k ? "bg-primary text-primary-foreground" : "bg-muted hover:bg-muted/70"}`}>{k === "res" ? "سكني" : "تجاري"}</button>
             ))}
             {path === "com" && (["bill", "kwh", "diesel"] as const).map((m) => (
               <button key={m} type="button" onClick={() => { setComM(m); setDaily(""); }} className={`rounded-lg border px-2 py-1.5 text-xs font-semibold ${comM === m ? "border-primary bg-primary/10 text-primary" : "bg-card"}`}>{m === "bill" ? "فاتورة" : m === "kwh" ? "استهلاك شهري" : "الديزل"}</button>
             ))}
-            {(path === "res" || (path === "com" && comM)) && ([[30, "نهار 70 / ليل 30"], [50, "50 / 50"], [70, "ليل 70 / نهار 30"]] as const).map(([v, label]) => (
+            {(path === "res" || (path === "com" && comM)) && ([[30, "نهار 70 / ليل 30"], [50, "50 / 50"], [70, "ليل 70 / نهار 30"]] as const).filter(([v]) => !(path === "res" && v === 30)).map(([v, label]) => (
               <button key={v} type="button" onClick={() => setDn(v)} className={`rounded-lg border px-2 py-1.5 text-xs font-semibold ${dn === v ? "border-primary bg-primary/10 text-primary" : "bg-card"}`}>{label}</button>
             ))}
             {(path === "res" || (path === "com" && comM)) && (

@@ -11,3 +11,5 @@
 - [x] Merge customers/messages/tickets missing from the Nov 15 backup (from the Nov 14 one)
 - [x] Point n8n at the new address (this project now owns actes-crm.lovable.app)
 - [ ] Republish so the faster backup code is live (blocked: user must publish)
+- [ ] Residential only: remove the 70% day / 30% night option (CRM + ACTES done; bot needs n8n connection)
+- [ ] Connect GitHub API in the new workspace
