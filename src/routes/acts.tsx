@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Sun, Users, GraduationCap, Star, MapPin, X, Check, Upload, Search, Briefcase, ChevronLeft } from "lucide-react";
 import logoWhite from "@/assets/actes-logo-white.png";
-import { tieredOptions, tiersDayNight, dailyProduction, type DayNight, type ComMethod } from "@/components/QuoteBuilder";
+import { tieredOptions, tiersDayNight, dailyNeed, dailyProduction, type DayNight, type ComMethod } from "@/components/QuoteBuilder";
 import { actsKwhPrice, actsQuoteRequest, actsListEngineers, actsGetEngineer, actsServiceRequest, actsRegister, actsUpload, actsReportReview } from "@/lib/acts.functions";
 import { offlineQuery } from "@/lib/offline-cache";
 import { SPECIALTIES, SERVICES, REG_SERVICES, GOVERNORATES, fileToB64 } from "@/lib/acts-data";
@@ -89,7 +89,7 @@ function QuoteFlow() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const v = Number(amount);
-  const tiers = useMemo(() => (v > 0 ? tiersDayNight(tieredOptions(path, path === "res" ? "bill" : method, v, price), night) : null), [path, method, v, price, night]);
+  const tiers = useMemo(() => (v > 0 ? tiersDayNight(tieredOptions(path, path === "res" ? "bill" : method, v, price), night, dailyNeed(path, path === "res" ? "bill" : method, v, price)) : null), [path, method, v, price, night]);
   const opts = tiers ? ([["أقل", tiers.low], ["الموصى بها", tiers.rec], ["أكبر", tiers.high]] as const).filter((x) => x[1]) : [];
   const unit = path === "res" || method === "bill" ? "ريال يمني شهرياً" : method === "kwh" ? "كيلو وات شهرياً" : "لتر ديزل شهرياً";
   const reset = () => { setStep(0); setAmount(""); setPick(""); setReports([]); setNight(50); };

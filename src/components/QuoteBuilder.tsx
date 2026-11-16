@@ -184,23 +184,41 @@ void SIZE_ORDER;
 // day 70% → next with less battery; 50/50 → unchanged. Then less/more are rebuilt around the new pick.
 export type DayNight = 30 | 50 | 70;
 export const batteryOf = (p: Preset) => Number((p.title.match(/\((\d+(?:\.\d+)?) كيلو\)/) ?? p.title.match(/(?:بطارية|بايلونتك) ([\d.]+)/) ?? [])[1] ?? 0);
-export const shiftDayNight = (rec: Preset, night: DayNight): Preset => {
+// Usable share of battery capacity used to check if it covers the night consumption.
+export const BATTERY_USABLE = 0.85;
+// need = daily kWh. Night 70%: keep the system if its battery covers need×70%, else the next system with
+// more battery that covers it (largest if none). Day 70%: smaller battery only if it still covers need×30%.
+export const shiftDayNight = (rec: Preset, night: DayNight, need?: number): Preset => {
   if (night === 50) return rec;
   const fam = PRESETS.filter((p) => p.group === rec.group && (p.type ?? "res") === (rec.type ?? "res"));
   const more = night === 70, b = batteryOf(rec);
+  let cands: Preset[];
   if (rec.type !== "com") {
-    const i = fam.indexOf(rec), dir = more ? 1 : -1;
-    for (let j = i + dir; j >= 0 && j < fam.length; j += dir) if (fam[j]!.title !== rec.title) return fam[j]!;
-    return rec;
+    const i = fam.indexOf(rec);
+    cands = (more ? fam.slice(i + 1) : fam.slice(0, i).reverse()).filter((p) => p.title !== rec.title);
+  } else {
+    const d = dailyProduction(rec);
+    cands = [...fam].sort((x, y) => dailyProduction(x) - dailyProduction(y)).filter((p) => dailyProduction(p) >= d - E && (more ? batteryOf(p) > b : batteryOf(p) < b));
   }
-  const d = dailyProduction(rec);
-  return [...fam].sort((x, y) => dailyProduction(x) - dailyProduction(y)).find((p) => dailyProduction(p) >= d - E && (more ? batteryOf(p) > b : batteryOf(p) < b)) ?? rec;
+  if (need == null || !(need > 0)) return cands[0] ?? rec;
+  const nightNeed = need * night / 100;
+  const covers = (p: Preset) => batteryOf(p) * BATTERY_USABLE >= nightNeed - E;
+  if (more) {
+    if (covers(rec)) return rec;
+    const up = [...cands].sort((x, y) => batteryOf(x) - batteryOf(y));
+    return up.find(covers) ?? up[up.length - 1] ?? rec;
+  }
+  const down = cands.filter(covers).sort((x, y) => batteryOf(x) - batteryOf(y));
+  return down[0] ?? rec;
 };
-export const tiersDayNight = (t: Tiers | null, night: DayNight): Tiers | null => {
+export const tiersDayNight = (t: Tiers | null, night: DayNight, need?: number): Tiers | null => {
   if (!t || night === 50) return t;
-  const r = shiftDayNight(t.rec, night);
+  const r = shiftDayNight(t.rec, night, need);
   return r === t.rec ? t : tiersFrom([r]);
 };
+// Daily kWh need from the entered amount (same conversions as the bot).
+export const dailyNeed = (path: "res" | "com", m: ComMethod, v: number, price = DEFAULT_KWH_PRICE) =>
+  (path === "res" || m === "bill" ? v / price : m === "kwh" ? v : v / 0.27) / 30;
 export const tieredOptions = (path: "res" | "com", m: ComMethod, v: number, price = DEFAULT_KWH_PRICE) =>
   tiersFrom(path === "res" ? optionsForResBill(v, price) : optionsForCom(m, v, price));
 // Bot-style inverter choice for business systems: sizes that cover the need, then single/three phase.
@@ -543,7 +561,7 @@ export function QuoteBuilder({ pw, initialCustomerId }: { pw: string; initialCus
     } catch (e) { setMsg((e as Error).message); } finally { setBusy(false); }
   };
   // Only the recommended system → load it straight away (no independence step).
-  const showTiers = (t0: Tiers | null) => { const t = tiersDayNight(t0, dn); if (t && !t.low && !t.high) { setTiers(null); loadPreset(t.rec); } else setTiers(t); };
+  const showTiers = (t0: Tiers | null) => { const t = tiersDayNight(t0, dn, Number(daily) > 0 ? dailyNeed(path, comM ?? "bill", Number(daily), kwhPrice) : undefined); if (t && !t.low && !t.high) { setTiers(null); loadPreset(t.rec); } else setTiers(t); };
   function loadPreset(p: Preset) {
     // Like the bot: every linked line takes name, specs, unit and price live from the catalog.
     const out: Line[] = p.lines ? p.lines.map((l) => {

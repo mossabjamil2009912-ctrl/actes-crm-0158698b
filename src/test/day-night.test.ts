@@ -1,10 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { optionsForResBill, tiersFrom, tiersDayNight } from "@/components/QuoteBuilder";
+import { optionsForResBill, tiersFrom, tiersDayNight, dailyNeed } from "@/components/QuoteBuilder";
 
-// Bill 40,000 YER at 290/kWh → 6.2 kW home system; the day/night choice changes the battery.
-const base = () => tiersFrom(optionsForResBill(40000, 290));
-describe("day/night usage choice (bill 40,000)", () => {
-  it("50/50 keeps 6.2 kW · battery 5.12 · 4 panels", () => expect(tiersDayNight(base(), 50)!.rec.title).toContain("بطارية 5.12 كيلو — 4 ألواح"));
-  it("night 70% picks battery 10.24 · 5 panels", () => expect(tiersDayNight(base(), 70)!.rec.title).toContain("بطارية 10.24 كيلو — 5 ألواح"));
-  it("day 70% stays on 5.12 (no smaller 6.2 kW system)", () => expect(tiersDayNight(base(), 30)!.rec.title).toContain("بطارية 5.12 كيلو"));
+const t = (bill: number) => tiersFrom(optionsForResBill(bill, 290));
+const n = (bill: number) => dailyNeed("res", "bill", bill, 290);
+describe("day/night by real night consumption (85% usable battery)", () => {
+  it("50,000 night 70% → night 4.02 kWh fits 5.12 battery → stays 5.12", () => expect(tiersDayNight(t(50000), 70, n(50000))!.rec.title).toContain("بطارية 5.12 كيلو — 4 ألواح"));
+  it("50,000 at 50/50 unchanged", () => expect(tiersDayNight(t(50000), 50, n(50000))!.rec.title).toContain("بطارية 5.12 كيلو"));
+  it("65,000 night 70% → night 5.23 kWh > 4.35 → 10.24 battery", () => expect(tiersDayNight(t(65000), 70, n(65000))!.rec.title).toContain("بطارية 10.24 كيلو"));
 });
