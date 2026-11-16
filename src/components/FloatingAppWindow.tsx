@@ -7,6 +7,7 @@ export function FloatingAppWindow({ title, src, allow, onClose }: { title: strin
   const [box, setBox] = useState<Box>({ x: 0, y: 0, w: 390, h: 740 });
   const [max, setMax] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [mini, setMini] = useState(false);
   const drag = useRef<{ mode: string; sx: number; sy: number; b: Box } | null>(null);
 
   useEffect(() => {
@@ -38,7 +39,9 @@ export function FloatingAppWindow({ title, src, allow, onClose }: { title: strin
 
   const free = desk && !max;
   return (
-    <div className={`fixed inset-0 z-50 ${free ? "pointer-events-none" : ""}`}>
+    <>
+    {mini && <button type="button" onClick={() => setMini(false)} className="fixed bottom-3 left-3 z-50 rounded-full border border-border bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-2xl">{title} ▴</button>}
+    <div className={`fixed inset-0 z-50 ${free ? "pointer-events-none" : ""} ${mini ? "hidden" : ""}`}>
       <div
         className={`pointer-events-auto absolute flex flex-col overflow-hidden bg-background ${free ? "rounded-2xl border border-border shadow-2xl" : "inset-0"}`}
         style={free ? { left: box.x, top: box.y, width: box.w, height: box.h } : undefined}
@@ -46,6 +49,7 @@ export function FloatingAppWindow({ title, src, allow, onClose }: { title: strin
         <div onPointerDown={start("move")} onDoubleClick={() => desk && setMax((m) => !m)} className={`flex h-7 shrink-0 select-none items-center justify-between border-b border-border px-2 ${free ? "cursor-move" : ""}`}>
           <span className="text-xs font-semibold leading-none">{title}</span>
           <div className="flex items-center" onPointerDown={(e) => e.stopPropagation()}>
+            <button type="button" onClick={() => setMini(true)} aria-label="تصغير" className="px-2 text-sm leading-none">—</button>
             {desk && <button type="button" onClick={() => setMax((m) => !m)} aria-label={max ? "استعادة" : "تكبير"} className="px-2 text-sm leading-none">{max ? "❐" : "□"}</button>}
             <button type="button" onClick={onClose} aria-label="إغلاق" className="px-2 text-sm leading-none">✕</button>
           </div>
@@ -63,5 +67,6 @@ export function FloatingAppWindow({ title, src, allow, onClose }: { title: strin
         </>}
       </div>
     </div>
+    </>
   );
 }

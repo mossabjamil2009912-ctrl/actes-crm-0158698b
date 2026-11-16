@@ -302,11 +302,13 @@ function Dashboard({ pw, onLogout }: { pw: string; onLogout: () => void }) {
     { k: "catalogs" as const, l: "منصة الكتالوجات", i: LayoutGrid, n: 0 },
   ];
   const [showCatalogs, setShowCatalogs] = useState(false);
+  const [showActs, setShowActs] = useState(false);
 
   return (
     <div dir="rtl" className="flex min-h-screen flex-col bg-background text-foreground lg:h-screen lg:overflow-hidden">
       <FrontendRedirect />
       {showCatalogs && <FloatingAppWindow title="منصة الكتالوجات" src="https://catalog-whisperer-starligight-shelf.lovable.app" allow="clipboard-write" onClose={() => setShowCatalogs(false)} />}
+      {showActs && <FloatingAppWindow title="منصة أكتس" src="https://sunwise-engineer-network.lovable.app" allow="geolocation; clipboard-write" onClose={() => setShowActs(false)} />}
       {!online && (
         <div className="bg-accent px-3 py-1 text-center text-xs font-semibold text-accent-foreground">
           أنت دون إنترنت — {savedAt ? `تعرض آخر نسخة محفوظة على الجهاز من {new Date(savedAt).toLocaleString("ar", { dateStyle: "short", timeStyle: "short" })}` : "لم تُحفظ نسخة على الجهاز بعد — افتح التطبيق مرة واحدة والإنترنت شغّال"}، وتتحدث تلقائياُ عند عودة الاتصال
@@ -357,7 +359,7 @@ function Dashboard({ pw, onLogout }: { pw: string; onLogout: () => void }) {
         : view === "reports" ? <div className="rounded-xl border border-border bg-card lg:min-h-0 lg:flex-1 lg:overflow-y-auto"><Reports pw={pw} autoOpenId={autoOpenRep} onAutoOpened={() => setAutoOpenRep(null)} /></div>
         : view === "tickets" ? <div className="rounded-xl border border-border bg-card lg:min-h-0 lg:flex-1 lg:overflow-y-auto"><Tickets pw={pw} /></div>
         : view === "catalog" ? <div className="rounded-xl border border-border bg-card lg:min-h-0 lg:flex-1 lg:overflow-y-auto"><Catalog pw={pw} /></div>
-        : view === "acts" ? <div className="rounded-xl border border-border bg-card lg:min-h-0 lg:flex-1 lg:overflow-y-auto"><ActsAdmin pw={pw} onOpenChat={async (phone, name) => { const r = await openChat({ data: { pw, phone, name } }); await qcAll.invalidateQueries({ queryKey: ["customers"] }); setView("chats"); setOpenId(r.id); }} /></div>
+        : view === "acts" ? <div className="rounded-xl border border-border bg-card lg:min-h-0 lg:flex-1 lg:overflow-y-auto"><ActsAdmin pw={pw} onOpenApp={() => setShowActs(true)} onOpenChat={async (phone, name) => { const r = await openChat({ data: { pw, phone, name } }); await qcAll.invalidateQueries({ queryKey: ["customers"] }); setView("chats"); setOpenId(r.id); }} /></div>
         : view === "flow" ? <div className="rounded-xl border border-border bg-card lg:min-h-0 lg:flex-1 lg:overflow-y-auto"><FlowPinGate><BotFlow pw={pw} /></FlowPinGate></div>
         : view === "quote" ? <div className="rounded-xl border border-border bg-background lg:min-h-0 lg:flex-1 lg:overflow-hidden"><QuoteBuilder pw={pw} /></div> : <>
         <div className="lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-3">
