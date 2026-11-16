@@ -28,7 +28,7 @@ printf '#include <windows.h>\nIDI_ICON1 ICON "actes.ico"\n' > "$OUT/actres.rc"
 (cd "$OUT" && nix run nixpkgs#zig -- rc actres.rc actes.res)
 
 # 3. compile: GUI subsystem (no console window), wWinMain entry point
-(cd "$OUT" && nix run nixpkgs#zig -- cc -target x86_64-windows-gnu -O2 -municode -mwindows \
+(cd "$OUT" && nix run nixpkgs#zig -- cc -target x86_64-windows-gnu -O2 -municode -Wl,--subsystem,windows \
   "$ROOT/desktop/launcher.c" -o ACTES-CRM.exe actes.res -lshell32 -luuid -lole32)
 
 echo "built: $OUT/ACTES-CRM.exe"
