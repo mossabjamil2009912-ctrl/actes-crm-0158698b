@@ -36,12 +36,12 @@ export function PdfView({ url }: { url: string }) {
     };
     // Two-finger pinch on touch screens.
     let start: { d: number; z: number } | null = null;
-    const dist = (t: TouchList) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+    const dist = (t: TouchList) => Math.hypot(t[0]!.clientX - t[1]!.clientX, t[0]!.clientY - t[1]!.clientY);
     const onStart = (e: TouchEvent) => { if (e.touches.length === 2) start = { d: dist(e.touches), z: zoomRef.current }; };
     const onMove = (e: TouchEvent) => {
       if (e.touches.length !== 2 || !start) return;
       e.preventDefault();
-      const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2, cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      const cx = (e.touches[0]!.clientX + e.touches[1]!.clientX) / 2, cy = (e.touches[0]!.clientY + e.touches[1]!.clientY) / 2;
       zoomAtRef.current(start.z * dist(e.touches) / start.d, cx, cy);
     };
     const onEnd = (e: TouchEvent) => { if (e.touches.length < 2) start = null; };
