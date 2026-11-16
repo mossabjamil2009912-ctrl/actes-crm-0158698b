@@ -131,7 +131,6 @@ function Login({ onOk }: { onOk: (p: string) => void }) {
   return (
     <div dir="rtl" className="flex min-h-screen items-center justify-center bg-background p-6">
       <FrontendRedirect />
-      {showCatalogs && <div className="fixed inset-0 z-50 flex flex-col bg-background"><div className="flex h-7 items-center justify-between border-b border-border px-2"><span className="text-xs font-semibold leading-none">منصة الكتالوجات</span><button type="button" onClick={() => setShowCatalogs(false)} aria-label="إغلاق" className="px-2 text-sm leading-none">✕</button></div><iframe src="https://catalog-whisperer-starligight-shelf.lovable.app" title="منصة الكتالوجات" allow="clipboard-write" className="w-full flex-1 border-0" /></div>}
       <form
         className="w-full max-w-sm space-y-4 rounded-2xl border border-border bg-card p-6 shadow-sm"
         onSubmit={async (e) => {
@@ -306,6 +305,7 @@ function Dashboard({ pw, onLogout }: { pw: string; onLogout: () => void }) {
   return (
     <div dir="rtl" className="flex min-h-screen flex-col bg-background text-foreground lg:h-screen lg:overflow-hidden">
       <FrontendRedirect />
+      {showCatalogs && <div className="fixed inset-0 z-50 flex flex-col bg-background"><div className="flex h-7 items-center justify-between border-b border-border px-2"><span className="text-xs font-semibold leading-none">منصة الكتالوجات</span><button type="button" onClick={() => setShowCatalogs(false)} aria-label="إغلاق" className="px-2 text-sm leading-none">✕</button></div><iframe src="https://catalog-whisperer-starligight-shelf.lovable.app" title="منصة الكتالوجات" allow="clipboard-write" className="w-full flex-1 border-0" /></div>}
       {!online && (
         <div className="bg-accent px-3 py-1 text-center text-xs font-semibold text-accent-foreground">
           أنت دون إنترنت — {savedAt ? `تعرض آخر نسخة محفوظة على الجهاز من {new Date(savedAt).toLocaleString("ar", { dateStyle: "short", timeStyle: "short" })}` : "لم تُحفظ نسخة على الجهاز بعد — افتح التطبيق مرة واحدة والإنترنت شغّال"}، وتتحدث تلقائياُ عند عودة الاتصال
