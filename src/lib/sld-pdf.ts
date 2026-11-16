@@ -66,8 +66,6 @@ export async function buildSld(name: string, spec: SystemSpec, when = new Date()
   p.drawRectangle({ x: W - lw - 22, y: H - lh - 16, width: lw + 12, height: lh + 12, color: WHITE });
   p.drawImage(logo, { x: W - lw - 16, y: H - lh - 10, width: lw, height: lh });
   const date = `${String(when.getDate()).padStart(2, "0")}/${String(when.getMonth() + 1).padStart(2, "0")}/${when.getFullYear()}`;
-  const nm = shapeArabic(name);
-  p.drawText(nm, { x: W - lw - 26 - u.widthOfTextAtSize(nm, 10), y: Y(22), size: 10, font: u, color: WHITE });
   t(c, `Single Line Diagram — ${date}`, W - lw - 26, 36, 7, MUTED, false, "r");
 
   // ---- DC side
