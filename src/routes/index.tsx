@@ -160,7 +160,7 @@ function Dashboard({ pw, onLogout }: { pw: string; onLogout: () => void }) {
   const { data: customers = [], isLoading } = useQuery(offlineQuery({
     queryKey: ["customers"],
     queryFn: () => list({ data: { pw } }),
-    refetchInterval: 20000,
+    refetchInterval: 5000,
   }));
   // حفظ كل المحادثات على الجهاز للعمل دون إنترنت
   const qcAll = useQueryClient();

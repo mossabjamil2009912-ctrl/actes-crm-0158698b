@@ -15,7 +15,7 @@ const TITLES = BOT_PRESETS.map((p) => p.title);
 
 export function useReports(pw: string) {
   const list = useServerFn(listReportRequests);
-  return useQuery(offlineQuery({ queryKey: ["reports"], queryFn: () => list({ data: { pw } }), refetchInterval: 30000 }));
+  return useQuery(offlineQuery({ queryKey: ["reports"], queryFn: () => list({ data: { pw } }), refetchInterval: 5000 }));
 }
 
 function toB64(f: File) {

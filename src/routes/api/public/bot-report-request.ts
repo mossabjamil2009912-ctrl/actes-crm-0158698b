@@ -40,7 +40,7 @@ export const Route = createFileRoute("/api/public/bot-report-request")({
         }).select("*").single();
         if (error) return new Response(error.message, { status: 500 });
         const { prewarmReport } = await import("@/lib/crm.functions");
-        await prewarmReport(supabaseAdmin, rq);
+        void prewarmReport(supabaseAdmin, rq);
         return Response.json({ ok: true });
       },
     },

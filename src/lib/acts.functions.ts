@@ -46,7 +46,7 @@ export const actsQuoteRequest = createServerFn({ method: "POST" })
     for (const kind of data.reports) {
       const { data: rq } = await sb.from("report_requests").insert({ phone: digits(data.phone), customer_id: id, name: data.name, system_label: data.system, kind, city: null }).select("*").single();
       const { prewarmReport } = await import("@/lib/crm.functions");
-      await prewarmReport(sb, rq);
+      void prewarmReport(sb, rq);
     }
     if (data.system.includes("قياس أحمال")) {
       const loc = data.system.split("الموقع:")[1]?.trim() || data.city;
@@ -230,7 +230,7 @@ export const actsReportRequest = createServerFn({ method: "POST" })
     const sb = await db();
     const { data: rq } = await sb.from("report_requests").insert({ phone: digits(data.phone), customer_id: id, name: data.name, system_label: data.system, kind: data.kind, city: data.city }).select("*").single();
     const { prewarmReport } = await import("@/lib/crm.functions");
-    await prewarmReport(sb, rq);
+    void prewarmReport(sb, rq);
     return { ok: true };
   });
 
