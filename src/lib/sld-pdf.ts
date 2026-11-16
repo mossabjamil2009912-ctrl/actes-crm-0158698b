@@ -115,14 +115,14 @@ export async function buildSld(name: string, spec: SystemSpec, when = new Date()
   t(c, "GRID OUT", ix + iw + 6, 116, 6, AC);
   line(c, ix + iw, 152, ax, 152, AC, 1.4); dot(c, ix + iw, 152, AC);
   t(c, "W4", 652, 134, 7, AC, true); t(c, `L1 L2 L3 N · ${d.acMm2} mm²`, ix + iw + 4, 146, 5.5, MUTED);
-  c.p.drawRectangle({ x: 660, y: Y(160), width: 14, height: 14, borderColor: AC, borderWidth: 1 }); t(c, "RCD-B", 667, 170, 5.5, AC, false, "c");
-  box(c, ax, ay, aw, ah, "AC OUTPUT BOARD (GRID)", [`Main ${d.acBreaker} A ${d.three ? "4P" : "2P"} — IP54`, d.three ? "L1 / L2 / L3 / N / PE" : "L / N / PE", "Icu 15 kA", `RCD Type B 30 mA ${d.three ? "4P" : "2P"}`, "AC SPD Type 2"], AC);
+  if (items.rcd) { c.p.drawRectangle({ x: 660, y: Y(160), width: 14, height: 14, borderColor: AC, borderWidth: 1 }); t(c, "RCD-B", 667, 170, 5.5, AC, false, "c"); }
+  box(c, ax, ay, aw, ah, "AC OUTPUT BOARD (GRID)", [`Main ${d.acBreaker} A ${d.three ? "4P" : "2P"} — IP54`, d.three ? "L1 / L2 / L3 / N / PE" : "L / N / PE", "Icu 15 kA", ...(items.rcd ? [`RCD Type B 30 mA ${d.three ? "4P" : "2P"}`] : []), ...(items.spd ? ["AC SPD Type 2"] : [])], AC);
   badge(c, 630, 176, d.drops.w4, 1.5);
   // EPS
   const ey = 220;
   line(c, ix + iw, 178, 630, 178, AC, 1.2); line(c, 630, 178, 630, ey + 20, AC, 1.2); line(c, 630, ey + 20, ax, ey + 20, AC, 1.2);
   t(c, "EPS / BACKUP", 636, 196, 6, AC); t(c, "COMM", bus + 28, 230, 6, COM);
-  box(c, ax, ey, aw, 40, "EPS OUTPUT BOARD", [`MCB ${d.acBreaker} A + RCD 30 mA`, "AC SPD Type 2"], AC);
+  box(c, ax, ey, aw, 40, "EPS OUTPUT BOARD", [`MCB ${d.acBreaker} A${items.rcd ? " + RCD 30 mA" : ""}`, ...(items.spd ? ["AC SPD Type 2"] : [])], AC);
   badge(c, 636, ey + 26, d.drops.eps, 1.5);
   // W5 -> meter -> grid
   const mx = 1050, gx = 1100;
@@ -149,11 +149,11 @@ export async function buildSld(name: string, spec: SystemSpec, when = new Date()
   line(c, 28, ge, W - 28, ge, YEL, 2.2); line(c, 28, ge - 1.5, W - 28, ge - 1.5, EARTH, 1);
   t(c, "LPS DOWN CONDUCTOR 50 mm²".replace("²", "2"), 28, 352, 5.5, EARTH, true);
   t(c, "PE — MAIN EARTHING BUS 1x16 mm2 (frames 1x6 mm2) — TN-S", 28, 380, 7, EARTH, true);
-  const taps: [number, string][] = [[70, "ARRAY FRAMES 6 mm2"], [300, "DC BOARD + SPD"], [520, "INVERTER CHASSIS"], [760, "AC BOARD + SPD"], [1130, "LOADS PANEL PE"]];
+  const taps: [number, string][] = [[70, "ARRAY FRAMES 6 mm2"], [300, items.spd ? "DC BOARD + SPD" : "DC BOARD"], [520, "INVERTER CHASSIS"], [760, items.spd ? "AC BOARD + SPD" : "AC BOARD"], [1130, "LOADS PANEL PE"]];
   for (const [x, s] of taps) { line(c, x, ge - 22, x, ge, EARTH, 0.8, [2, 2]); dot(c, x, ge, EARTH); t(c, s, x, ge + 14, 5.5, EARTH, false, "c"); }
   c.p.drawRectangle({ x: 380, y: Y(ge + 8), width: 130, height: 16, color: BG, borderColor: EARTH, borderWidth: 1.2 });
   t(c, "MAIN EARTH BAR (MEB) — Cu 25x3 mm", 445, ge + 3, 6, EARTH, true, "c");
-  t(c, "SPD TYPE I+II — DC", 300, 340, 5.5, EARTH, true, "c"); t(c, "SPD TYPE I+II — AC", 760, 340, 5.5, EARTH, true, "c");
+  if (items.spd) { t(c, "SPD TYPE I+II — DC", 300, 340, 5.5, EARTH, true, "c"); t(c, "SPD TYPE I+II — AC", 760, 340, 5.5, EARTH, true, "c"); }
   const px = W - 70;
   line(c, px, ge, px, ge + 18, EARTH, 1.2);
   [16, 10, 5].forEach((w, i) => line(c, px - w, ge + 18 + i * 4, px + w, ge + 18 + i * 4, EARTH, 1.2));

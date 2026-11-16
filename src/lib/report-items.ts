@@ -20,6 +20,8 @@ export type ReportItems = {
   dcBox?: string[]; // e.g. ["DC MCB 2P 1000V 32A"]
   acBoard?: boolean;
   cableMm2?: number;
+  spd?: boolean; // surge arrester present in the quote
+  rcd?: boolean; // residual-current device present in the quote
 };
 
 const norm = (s: string) => s.replace(/[–—-]/g, "-").replace(/\s+/g, " ").trim();
@@ -36,6 +38,9 @@ export function reportItems(label: string | null | undefined): ReportItems {
   const out: ReportItems = {};
   for (const l of p.lines) {
     const n = l.name;
+    const all = [n, ...l.specs].join(" ");
+    if (/مانع\s*(ال)?صواعق|SPD|surge/i.test(all)) out.spd = true;
+    if (/RCD|تفاضلي|RCCB|ELCB/i.test(all)) out.rcd = true;
     if (/إنفرتر|انفرتر/.test(n)) out.inverter = { brand: brandOf(n), model: latin(modelOf(l)) || brandOf(n), qty: l.qty };
     else if (/بطارية/.test(n)) out.battery = { brand: brandOf(n), model: latin(modelOf(l)), qty: l.qty };
     else if (/الواح|ألواح/.test(n)) out.panel = { brand: brandOf(n), model: latin(modelOf(l)) };
