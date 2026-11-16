@@ -323,7 +323,7 @@ function Dashboard({ pw, onLogout }: { pw: string; onLogout: () => void }) {
             {tabs.map((t) => (
               <button key={t.k} onClick={() => { if (t.k === "catalogs") { setShowCatalogs(true); return; } setView(t.k); if (t.k !== "chats") setOpenId(null); }}
                 className={`relative flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-lg px-0.5 py-1 text-[10px] font-semibold leading-tight md:flex-row md:gap-1 md:px-2 md:text-xs ${view === t.k ? "bg-primary text-primary-foreground shadow" : "hover:bg-ink-foreground/10"}`}>
-                <t.i className="h-3.5 w-3.5 shrink-0" /><span className="truncate max-w-full">{t.l}</span>
+                <t.i className="h-3.5 w-3.5 shrink-0" /><span className="max-w-full text-center">{t.l}</span>
                 {t.n > 0 && <span className="absolute -top-1 left-1 rounded-full bg-destructive px-1.5 text-[10px] font-bold text-destructive-foreground">{t.n}</span>}
               </button>
             ))}
