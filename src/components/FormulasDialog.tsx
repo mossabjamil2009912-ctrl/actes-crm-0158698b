@@ -111,6 +111,12 @@ export function FormulasDialog({ pw, code, onClose }: { pw: string; code: string
               <Num label="أيام الشهر" hint="الاستهلاك اليومي = الشهري ÷ أيام الشهر" value={f.days} onChange={(v) => up({ days: v })} />
               <Num label="ساعات الإشعاع" hint="قدرة الألواح = الاستهلاك اليومي ÷ ساعات الإشعاع" value={f.sun} onChange={(v) => up({ sun: v })} />
               <Num label="معامل تفريغ البطارية" hint="السعة الاسمية = الاستهلاك الليلي ÷ المعامل" value={f.dod} onChange={(v) => up({ dod: Math.min(v, 1) })} />
+              <div className="pt-2 text-xs font-bold">حساب المنظومة بالمعادلات (8 – 125 كيلو)</div>
+              <Num label="قدرة اللوح (واط)" hint="الألواح = قدرة الألواح × 1000 ÷ قدرة اللوح، مقربة للتساوي على الاسترنقات" value={f.panelW} onChange={(v) => up({ panelW: v })} />
+              <Num label="نسبة الألواح إلى الإنفرتر" hint="عدد الإنفرترات = أكبر(الحمل، قدرة الألواح ÷ النسبة) ÷ قدرة الإنفرتر" value={f.dcRatio} onChange={(v) => up({ dcRatio: v })} />
+              <Num label="أقصى قدرة للجهد المنخفض (كيلو)" hint="فوقها تُعرض إنفرترات هاي فولتج فقط" value={f.lvMaxKw} onChange={(v) => up({ lvMaxKw: v })} />
+              <Num label="أقصى عدد إنفرترات بالتوازي" value={f.maxInverters} onChange={(v) => up({ maxInverters: Math.round(v) })} />
+              <Num label="سعة البطارية (كيلووات ساعة)" hint="البطاريات = السعة الاسمية ÷ سعة البطارية (مقربة للأعلى)" value={f.batKwh} onChange={(v) => up({ batKwh: v })} />
             </div>
           ) : tab === "res" ? (
             <div className="space-y-2">
@@ -127,7 +133,7 @@ export function FormulasDialog({ pw, code, onClose }: { pw: string; code: string
               <div className="pt-2 text-xs font-bold">منظومات High Voltage (50 / 80 / 125 كيلو)</div>
               <p className="text-[11px] text-muted-foreground">نفس معادلات الألواح والصناديق ولوحة AC والكابل والكنشات أعلاه؛ الأصناف (1500V، كابل 10 مم، لوحات 50/80/125) تُختار من جدول الأصناف.</p>
               <Eq n={3} title="البطارية وملحقاتها (كنترول BCU + كنترول ربط EBC + قاطع حماية البطاريات)">
-                <Num label="عدد البطاريات في السلسلة (الحد الأدنى والخطوة)" value={f.hvMinBat} onChange={(v) => up({ hvMinBat: Math.round(v) })} />
+                <Num label="أقل عدد بطاريات هاي فولتج" value={f.hvMinBat} onChange={(v) => up({ hvMinBat: Math.round(v) })} />
                 <Num label="أقصى بطاريات لكل كنترول BCU" value={f.hvBatPerBcu} onChange={(v) => up({ hvBatPerBcu: Math.round(v) })} />
                 <p className="text-xs text-muted-foreground">BCU = ⌈البطاريات ÷ {f.hvBatPerBcu}⌉ · EBC عند {2 * f.hvMinBat} بطاريات فأكثر · قاطع حماية لكل BCU</p>
               </Eq>

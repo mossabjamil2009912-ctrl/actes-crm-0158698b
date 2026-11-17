@@ -20,6 +20,11 @@ export type Formulas = {
   vmaxHV: number;        // high-voltage inverter max DC voltage
   hvMinBat: number;      // HV batteries come in steps of this many (min series)
   hvBatPerBcu: number;   // HV batteries per BCU controller
+  panelW: number;        // panel watts used for panel count
+  dcRatio: number;       // panel kWp per inverter kW (DC/AC ratio)
+  lvMaxKw: number;       // above this AC power → High Voltage family
+  maxInverters: number;  // most inverters in parallel
+  batKwh: number;        // battery size (kWh) for battery count
 };
 export const DEFAULT_FORMULAS: Formulas = {
   days: 26, sun: 5, dod: 0.85, night: { 30: 30, 50: 50, 70: 70 },
@@ -27,6 +32,7 @@ export const DEFAULT_FORMULAS: Formulas = {
   dcMaxLines: 10, dcStep: 2, acSingleV: 220, acThreeDiv: 658, acSafety: 1.25, cableM: 1, mc4PerString: 1,
   panelVoc: 48.5, coldFactor: 1.1, vmaxSingle: 500, vmaxThree: 800,
   vmaxHV: 1000, hvMinBat: 4, hvBatPerBcu: 12,
+  panelW: 720, dcRatio: 1.3, lvMaxKw: 40, maxInverters: 5, batKwh: 16,
 };
 export const F: Formulas = structuredClone(DEFAULT_FORMULAS);
 export const mergeFormulas = (v: unknown): Formulas => {
@@ -41,6 +47,7 @@ export const mergeFormulas = (v: unknown): Formulas => {
     acThreeDiv: num(o.acThreeDiv, D.acThreeDiv), acSafety: num(o.acSafety, D.acSafety), cableM: num(o.cableM, D.cableM), mc4PerString: num(o.mc4PerString, D.mc4PerString), 
     panelVoc: num(o.panelVoc, D.panelVoc), coldFactor: num(o.coldFactor, D.coldFactor), vmaxSingle: num(o.vmaxSingle, D.vmaxSingle), vmaxThree: num(o.vmaxThree, D.vmaxThree),
     vmaxHV: num(o.vmaxHV, D.vmaxHV), hvMinBat: num(o.hvMinBat, D.hvMinBat), hvBatPerBcu: num(o.hvBatPerBcu, D.hvBatPerBcu),
+    panelW: num(o.panelW, D.panelW), dcRatio: num(o.dcRatio, D.dcRatio), lvMaxKw: num(o.lvMaxKw, D.lvMaxKw), maxInverters: num(o.maxInverters, D.maxInverters), batKwh: num(o.batKwh, D.batKwh),
   };
 };
 // Strings (Voc): max per string = ⌊Vmax ÷ (Voc × cold)⌋; strings = ⌈panels ÷ max⌉ (at least one per inverter).
@@ -48,9 +55,9 @@ export const mergeFormulas = (v: unknown): Formulas => {
 export type Phase = boolean | "hv";
 export const maxPerString = (three: Phase, f: Formulas = F) => Math.max(1, Math.floor((three === "hv" ? f.vmaxHV : three ? f.vmaxThree : f.vmaxSingle) / (f.panelVoc * f.coldFactor)));
 export const stringCount = (panels: number, three: Phase, inverters = 1, f: Formulas = F) => Math.max(inverters, Math.ceil(panels / maxPerString(three, f)));
-// HV battery accessories: batteries in steps of hvMinBat; BCU = ⌈n ÷ perBcu⌉; EBC = BCU when n ≥ 2×min; DC protection = BCU.
+// HV battery accessories: at least hvMinBat batteries (any count above); BCU = ⌈n ÷ perBcu⌉; EBC = BCU when n ≥ 2×min; DC protection = BCU.
 export const hvAccessories = (bat: number, f: Formulas = F) => {
-  const n = Math.max(f.hvMinBat, Math.ceil(bat / f.hvMinBat) * f.hvMinBat);
+  const n = Math.max(f.hvMinBat, Math.ceil(bat));
   const bcu = Math.ceil(n / f.hvBatPerBcu);
   return { bat: n, bcu, ebc: n >= 2 * f.hvMinBat ? bcu : 0, bdc: bcu };
 };

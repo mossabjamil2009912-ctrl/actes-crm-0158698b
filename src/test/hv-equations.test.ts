@@ -9,7 +9,8 @@ describe("High Voltage equations", () => {
   it("HV max per string at 1000V = 18", () => expect(maxPerString("hv", D)).toBe(18));
   it("4 batteries → 1 BCU, no EBC, 1 protection", () => expect(hvAccessories(4, D)).toEqual({ bat: 4, bcu: 1, ebc: 0, bdc: 1 }));
   it("24 batteries → 2 BCU, 2 EBC", () => expect(hvAccessories(24, D)).toEqual({ bat: 24, bcu: 2, ebc: 2, bdc: 2 }));
-  it("6 batteries round up to 8", () => expect(hvAccessories(6, D).bat).toBe(8));
+  it("6 batteries stay 6 (min 4)", () => expect(hvAccessories(6, D).bat).toBe(6));
+  it("2 batteries raise to 4", () => expect(hvAccessories(2, D).bat).toBe(4));
   it("HV quote adds BCU + EBC and 18-panel strings", () => {
     const o = applyEquations([L("PV", 180), L("INV_SOLIS_50K_3P_HV", 2), L("BAT_HITHIUM_16K_HV", 12), L("DCBOX_1500_6", 1), L("cable", 1), L("mc4_connector", 1)], items, () => null, D);
     expect(o.find((l) => l.key === "ctrl_hithium_hv16")?.qty).toBe(1);
