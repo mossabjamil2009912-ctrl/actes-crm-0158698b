@@ -17,12 +17,16 @@ export type Formulas = {
   coldFactor: number;    // Voc rise in cold
   vmaxSingle: number;    // single-phase inverter max DC voltage
   vmaxThree: number;     // three-phase LV inverter max DC voltage
+  vmaxHV: number;        // high-voltage inverter max DC voltage
+  hvMinBat: number;      // HV batteries come in steps of this many (min series)
+  hvBatPerBcu: number;   // HV batteries per BCU controller
 };
 export const DEFAULT_FORMULAS: Formulas = {
   days: 26, sun: 5, dod: 0.85, night: { 30: 30, 50: 50, 70: 70 },
   resRanges: [[1.2], [2.5], [2.5], [4], [4], [5, 7.5], [13], [21], [31.7], [35.6], [55.4], [63.4], [71.3], [83.2], [106.9]],
   dcMaxLines: 10, dcStep: 2, acSingleV: 220, acThreeDiv: 658, acSafety: 1.25, cableM: 1, mc4PerString: 1,
   panelVoc: 48.5, coldFactor: 1.1, vmaxSingle: 500, vmaxThree: 800,
+  vmaxHV: 1000, hvMinBat: 4, hvBatPerBcu: 12,
 };
 export const F: Formulas = structuredClone(DEFAULT_FORMULAS);
 export const mergeFormulas = (v: unknown): Formulas => {
@@ -36,11 +40,20 @@ export const mergeFormulas = (v: unknown): Formulas => {
     dcMaxLines: num(o.dcMaxLines, D.dcMaxLines), dcStep: num(o.dcStep, D.dcStep), acSingleV: num(o.acSingleV, D.acSingleV),
     acThreeDiv: num(o.acThreeDiv, D.acThreeDiv), acSafety: num(o.acSafety, D.acSafety), cableM: num(o.cableM, D.cableM), mc4PerString: num(o.mc4PerString, D.mc4PerString), 
     panelVoc: num(o.panelVoc, D.panelVoc), coldFactor: num(o.coldFactor, D.coldFactor), vmaxSingle: num(o.vmaxSingle, D.vmaxSingle), vmaxThree: num(o.vmaxThree, D.vmaxThree),
+    vmaxHV: num(o.vmaxHV, D.vmaxHV), hvMinBat: num(o.hvMinBat, D.hvMinBat), hvBatPerBcu: num(o.hvBatPerBcu, D.hvBatPerBcu),
   };
 };
 // Strings (Voc): max per string = ⌊Vmax ÷ (Voc × cold)⌋; strings = ⌈panels ÷ max⌉ (at least one per inverter).
-export const maxPerString = (three: boolean, f: Formulas = F) => Math.max(1, Math.floor((three ? f.vmaxThree : f.vmaxSingle) / (f.panelVoc * f.coldFactor)));
-export const stringCount = (panels: number, three: boolean, inverters = 1, f: Formulas = F) => Math.max(inverters, Math.ceil(panels / maxPerString(three, f)));
+// `three` may be "hv" for high-voltage inverters (vmaxHV).
+export type Phase = boolean | "hv";
+export const maxPerString = (three: Phase, f: Formulas = F) => Math.max(1, Math.floor((three === "hv" ? f.vmaxHV : three ? f.vmaxThree : f.vmaxSingle) / (f.panelVoc * f.coldFactor)));
+export const stringCount = (panels: number, three: Phase, inverters = 1, f: Formulas = F) => Math.max(inverters, Math.ceil(panels / maxPerString(three, f)));
+// HV battery accessories: batteries in steps of hvMinBat; BCU = ⌈n ÷ perBcu⌉; EBC = BCU when n ≥ 2×min; DC protection = BCU.
+export const hvAccessories = (bat: number, f: Formulas = F) => {
+  const n = Math.max(f.hvMinBat, Math.ceil(bat / f.hvMinBat) * f.hvMinBat);
+  const bcu = Math.ceil(n / f.hvBatPerBcu);
+  return { bat: n, bcu, ebc: n >= 2 * f.hvMinBat ? bcu : 0, bdc: bcu };
+};
 export const applyFormulas = (v: unknown) => Object.assign(F, mergeFormulas(v));
 // DC box: qty = ⌈N / max⌉, lines = ⌈(N/qty)/step⌉ × step.
 export const dcBoxes = (strings: number, f: Formulas = F) => {
@@ -64,8 +77,34 @@ export function applyEquations<L extends EqLine>(lines: L[], items: EqItem[], ke
   const invQty = lines.reduce((s, l, i) => s + (cat[i]?.category === "inverters" ? l.qty : 0), 0);
   const panels = lines.reduce((s, l, i) => s + (cat[i]?.category === "panels" ? l.qty : 0), 0);
   if (!invQty || !panels) return lines;
-  const three = lines.some((l, i) => cat[i]?.category === "inverters" && /ثري|3\s*فاز|three|LP3|SG0\dLP3/i.test(`${l.name} ${cat[i]?.name} ${l.specs.join(" ")}`));
+  const invText = lines.map((l, i) => (cat[i]?.category === "inverters" ? `${l.name} ${cat[i]?.name} ${l.key} ${l.specs.join(" ")}` : "")).join(" ");
+  const hv = /جهد عالي|_HV\b|\bHV\b/i.test(invText);
+  const three: Phase = hv ? "hv" : /ثري|3\s*فاز|three|LP3|SG0\dLP3/i.test(invText);
   const strings = stringCount(panels, three, invQty, f);
+  // HV batteries → BCU / EBC / DC protection from the equation (items from the catalog only).
+  const hvBat = lines.reduce((s, l, i) => s + (cat[i]?.category === "batteries" && /HV|هاي فولتج/i.test(`${l.key} ${cat[i]?.name}`) ? l.qty : 0), 0);
+  const acc = hv && hvBat ? hvAccessories(hvBat, f) : null;
+  const ACC: [RegExp, keyof NonNullable<typeof acc>][] = [[/ebc/i, "ebc"], [/^ctrl_/i, "bcu"], [/protect/i, "bdc"]];
+  if (acc) {
+    const seen = new Set<string>();
+    lines = lines.map((l, i) => {
+      const r = cat[i];
+      if (r?.category === "batteries" && /HV|هاي فولتج/i.test(`${l.key} ${r.name}`)) return { ...l, qty: acc.bat };
+      if (r?.category === "battery_controls") { const m = ACC.find(([re]) => re.test(r.key)); if (m) { seen.add(m[1]); return { ...l, qty: acc[m[1]] }; } }
+      return l;
+    }).filter((l, i) => !(cat[i]?.category === "battery_controls" && l.qty === 0));
+    const add = (re: RegExp, want: keyof typeof acc) => {
+      if (seen.has(want) || !acc[want]) return;
+      const r = ok.find((x) => x.category === "battery_controls" && re.test(x.key) && (want !== "bcu" || !/ebc/i.test(x.key)));
+      if (r) lines = [...lines, { ...lines[0]!, key: r.key, name: r.name, unit: r.unit, price: Number(r.price ?? 0), qty: acc[want], specs: specsOfItem(r), auto: false }];
+    };
+    for (const [re, w] of ACC) add(re, w);
+  }
+  return applyEquationsInner(lines, ok, keyOf, f, strings, invQty);
+}
+function applyEquationsInner<L extends EqLine>(lines: L[], ok: EqItem[], keyOf: (l: L) => string | null, f: Formulas, strings: number, invQty: number): L[] {
+  const find = (k: string) => ok.find((i) => i.key === k);
+  const cat = lines.map((l) => find(l.key) ?? (keyOf(l) ? find(keyOf(l)!) : undefined));
   const as = (l: L, r: EqItem, qty: number): L => ({ ...l, key: r.key, name: r.name, unit: r.unit, price: Number(r.price ?? 0), qty, specs: specsOfItem(r).length ? specsOfItem(r) : l.specs });
   const out: L[] = [];
   let dcDone = false;

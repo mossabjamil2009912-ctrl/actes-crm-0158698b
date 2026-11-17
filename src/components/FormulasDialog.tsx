@@ -122,7 +122,20 @@ export function FormulasDialog({ pw, code, onClose }: { pw: string; code: string
               {resSub === "big" && seven(f, big)}
             </div>
           ) : (
-            <div className="space-y-2"><div className="text-xs font-bold">منظومات Low Voltage</div>{seven(f, [])}</div>
+            <div className="space-y-2">
+              <div className="text-xs font-bold">منظومات Low Voltage</div>{seven(f, [])}
+              <div className="pt-2 text-xs font-bold">منظومات High Voltage (50 / 80 / 125 كيلو)</div>
+              <p className="text-[11px] text-muted-foreground">نفس معادلات الألواح والصناديق ولوحة AC والكابل والكنشات أعلاه؛ الأصناف (1500V، كابل 10 مم، لوحات 50/80/125) تُختار من جدول الأصناف.</p>
+              <Eq n={3} title="البطارية وملحقاتها (كنترول BCU + كنترول ربط EBC + قاطع حماية البطاريات)">
+                <Num label="عدد البطاريات في السلسلة (الحد الأدنى والخطوة)" value={f.hvMinBat} onChange={(v) => up({ hvMinBat: Math.round(v) })} />
+                <Num label="أقصى بطاريات لكل كنترول BCU" value={f.hvBatPerBcu} onChange={(v) => up({ hvBatPerBcu: Math.round(v) })} />
+                <p className="text-xs text-muted-foreground">BCU = ⌈البطاريات ÷ {f.hvBatPerBcu}⌉ · EBC عند {2 * f.hvMinBat} بطاريات فأكثر · قاطع حماية لكل BCU</p>
+              </Eq>
+              <Eq n={4} title="تقسيم الاسترنقات (Voc)">
+                <Num label="أقصى جهد إنفرتر هاي فولتج (فولت)" value={f.vmaxHV} onChange={(v) => up({ vmaxHV: v })} />
+                <p className="text-xs text-muted-foreground">أقصى ألواح بالاسترنق: {Math.max(1, Math.floor(f.vmaxHV / (f.panelVoc * f.coldFactor)))}</p>
+              </Eq>
+            </div>
           )}
         </div>
         {msg && <p className={`text-xs ${msg.ok ? "text-primary" : "text-destructive"}`}>{msg.t}</p>}
