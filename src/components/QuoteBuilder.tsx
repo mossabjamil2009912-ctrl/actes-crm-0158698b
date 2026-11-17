@@ -567,7 +567,7 @@ export function QuoteBuilder({ pw, initialCustomerId }: { pw: string; initialCus
     } catch (e) { setMsg((e as Error).message); } finally { setBusy(false); }
   };
   // Only the recommended system → load it straight away (no independence step).
-  const showTiers = (t0: Tiers | null) => { const t = tiersDayNight(t0, dn, Number(daily) > 0 ? dailyNeed(path ?? "res", comM ?? "bill", Number(daily), kwhPrice) : undefined); if (t && !t.low && !t.high) { setTiers(null); loadPreset(t.rec); } else setTiers(t); };
+  const showTiers = (t0: Tiers | null) => { const t = tiersDayNight(t0, dn, Number(daily) > 0 ? dailyNeed(path ?? "res", comM ?? "bill", Number(daily), kwhPrice) : undefined); setTiers(null); if (t) loadPreset(t.rec); };
   function loadPreset(p: Preset) {
     // Like the bot: every linked line takes name, specs, unit and price live from the catalog.
     const out: Line[] = p.lines ? p.lines.map((l) => {
