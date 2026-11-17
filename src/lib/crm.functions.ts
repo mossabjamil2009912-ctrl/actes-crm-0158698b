@@ -775,3 +775,29 @@ export const openCustomerChat = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { id: (row as { id: string }).id };
   });
+
+// Editable sizing equations ("المعادلات"), shared with the bot through bot-catalog (FORMULAS).
+export const getFormulas = createServerFn({ method: "POST" })
+  .inputValidator((d) => z.object({ pw: z.string() }).parse(d))
+  .handler(async ({ data }) => {
+    check(data.pw);
+    const { mergeFormulas } = await import("@/lib/formulas");
+    const { supabaseAdmin } = await import("@/lib/db.server");
+    const { data: r } = await supabaseAdmin.from("app_settings").select("text_value").eq("key", "formulas").maybeSingle();
+    let v: unknown = null;
+    try { v = r?.text_value ? JSON.parse(r.text_value) : null; } catch { v = null; }
+    return { formulas: mergeFormulas(v) };
+  });
+
+export const saveFormulas = createServerFn({ method: "POST" })
+  .inputValidator((d) => z.object({ pw: z.string(), code: z.string(), formulas: z.record(z.string(), z.unknown()) }).parse(d))
+  .handler(async ({ data }) => {
+    check(data.pw);
+    if (data.code !== "2027") throw new Error("رمز غير صحيح");
+    const { mergeFormulas } = await import("@/lib/formulas");
+    const f = mergeFormulas(data.formulas);
+    const { supabaseAdmin } = await import("@/lib/db.server");
+    const { error } = await supabaseAdmin.from("app_settings").upsert({ key: "formulas", value: 0, text_value: JSON.stringify(f), updated_at: new Date().toISOString() });
+    if (error) throw new Error(error.message);
+    return { formulas: f };
+  });

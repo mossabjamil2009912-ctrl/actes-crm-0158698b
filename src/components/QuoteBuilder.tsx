@@ -3,9 +3,10 @@ import { applyAutoRules, type CatItem } from "@/lib/auto-rules";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Search, FilePlus2, Save, Minus, Plus, Trash2, Check, Zap, Battery, Sun, Box, ShieldCheck, Server, Home, Cpu, Cable, Wrench, Printer, History, Share2, X, Download } from "lucide-react";
-import { listCatalog, listCustomers, saveQuote, listQuotes, sendAttachment, ensureCustomerByPhone, uploadQuotePdf, getKwhPrice, setKwhPrice } from "@/lib/crm.functions";
+import { listCatalog, listCustomers, saveQuote, listQuotes, sendAttachment, ensureCustomerByPhone, uploadQuotePdf, getKwhPrice, setKwhPrice, getFormulas } from "@/lib/crm.functions";
 import { offlineQuery } from "@/lib/offline-cache";
 import { BOT_PRESETS } from "@/lib/bot-presets";
+import { F, applyFormulas } from "@/lib/formulas";
 import logoClean from "@/assets/actes-logo-clean.png";
 
 type Row = Awaited<ReturnType<typeof listCatalog>>[number];
@@ -101,14 +102,15 @@ const COMMERCIAL: Preset[] = [
 PRESETS.push(...COMMERCIAL);
 // Bot formulas (State Machine), fed with daily kWh directly (no ÷30):
 // production = panels × panel W × 5 / 1000.
-export const dailyProduction = (p: Preset) => p.panels ? p.panels * (p.pw ?? 720) * 5 / 1000 :
-  p.items.reduce((s, [k, q]) => s + (k === "PV_SUNTECH_595" ? q * 595 : k === "PV_SUNTECH_720" ? q * 720 : 0), 0) * 5 / 1000;
+export const dailyProduction = (p: Preset) => p.panels ? p.panels * (p.pw ?? 720) * F.sun / 1000 :
+  p.items.reduce((s, [k, q]) => s + (k === "PV_SUNTECH_595" ? q * 595 : k === "PV_SUNTECH_720" ? q * 720 : 0), 0) * F.sun / 1000;
 // ===== Exact copy of the WhatsApp bot selection rules (State Machine) =====
 // Residential: bot RES_TABLE "range" values (Excel), in the same order as the residential presets.
 // Preset #6 (6.2 kW, 4 panels) is bot r6 AND r7 (identical systems), so it carries both ranges.
-const RES_RANGES: number[][] = [[1.2], [2.5], [2.5], [4], [4], [5, 7.5], [13], [21], [31.7], [35.6], [55.4], [63.4], [71.3], [83.2], [106.9]];
+
 const RES_LIST = PRESETS.filter((p) => p.type !== "com");
 export const RES_MAX_DAILY = 106.9;
+const resMax = () => Math.max(...F.resRanges.flat());
 export const DEFAULT_KWH_PRICE = 290;
 const E = 0.0001;
 // resNearest: closest range; 8/12 kW never below the need; equal distances are all returned (bot tie buttons).
@@ -116,7 +118,7 @@ export const resOptions = (need: number): Preset[] => {
   let best: number | null = null;
   let out: Preset[] = [];
   RES_LIST.forEach((p, i) => {
-    for (const range of RES_RANGES[i] ?? []) {
+    for (const range of F.resRanges[i] ?? []) {
       if (/^إنفرتر (8|12) /.test(p.group) && range < need - E) continue;
       const d = Math.abs(range - need);
       if (best === null || d < best - E) { best = d; out = [p]; }
@@ -151,16 +153,16 @@ export const comOptions = (need: number): Preset[] => {
 };
 // Bot entry paths. Residential bill → need = bill ÷ price ÷ 26; above the largest home range → commercial.
 export const optionsForResBill = (bill: number, price = DEFAULT_KWH_PRICE): Preset[] => {
-  const need = bill / price / 26;
-  return need > RES_MAX_DAILY + E ? comOptions(need) : resOptions(need);
+  const need = bill / price / F.days;
+  return need > resMax() + E ? comOptions(need) : resOptions(need);
 };
 export type ComMethod = "bill" | "kwh" | "diesel";
 // Commercial (com_1 bill / com_2 kWh per month / com_3 diesel litres ÷ 0.27) → kWh/month ÷ 26.
 export const optionsForCom = (m: ComMethod, v: number, price = DEFAULT_KWH_PRICE): Preset[] => {
   const kwh = m === "bill" ? v / price : m === "kwh" ? v : v / 0.27;
-  const need = kwh / 26;
+  const need = kwh / F.days;
   // Live bot: a commercial need that fits the home range is treated exactly as residential.
-  return need <= RES_MAX_DAILY + E ? resOptions(need) : comOptions(need);
+  return need <= resMax() + E ? resOptions(need) : comOptions(need);
 };
 
 // Three choices (app + bot): one size smaller / the right system / one size larger.
@@ -185,7 +187,7 @@ void SIZE_ORDER;
 export type DayNight = 30 | 50 | 70;
 export const batteryOf = (p: Preset) => Number((p.title.match(/\((\d+(?:\.\d+)?) كيلو\)/) ?? p.title.match(/(?:بطارية|بايلونتك) ([\d.]+)/) ?? [])[1] ?? 0);
 // Usable share of battery capacity used to check if it covers the night consumption.
-export const BATTERY_USABLE = 0.85;
+export const BATTERY_USABLE = 0.85; // default; live value is F.dod
 // need = daily kWh. Night 70%: keep the system if its battery covers need×70%, else the next system with
 // more battery that covers it (largest if none). Day 70%: smaller battery only if it still covers need×30%.
 export const shiftDayNight = (rec: Preset, night: DayNight, need?: number): Preset => {
@@ -201,8 +203,8 @@ export const shiftDayNight = (rec: Preset, night: DayNight, need?: number): Pres
     cands = [...fam].sort((x, y) => dailyProduction(x) - dailyProduction(y)).filter((p) => dailyProduction(p) >= d - E && (more ? batteryOf(p) > b : batteryOf(p) < b));
   }
   if (need == null || !(need > 0)) return cands[0] ?? rec;
-  const nightNeed = need * night / 100;
-  const covers = (p: Preset) => batteryOf(p) * BATTERY_USABLE >= nightNeed - E;
+  const nightNeed = need * F.night[night] / 100;
+  const covers = (p: Preset) => batteryOf(p) * F.dod >= nightNeed - E;
   if (more) {
     if (covers(rec)) return rec;
     const up = [...cands].sort((x, y) => batteryOf(x) - batteryOf(y));
@@ -218,7 +220,7 @@ export const tiersDayNight = (t: Tiers | null, night: DayNight, need?: number): 
 };
 // Daily kWh need from the entered amount (same conversions as the bot).
 export const dailyNeed = (path: "res" | "com", m: ComMethod, v: number, price = DEFAULT_KWH_PRICE) =>
-  (path === "res" || m === "bill" ? v / price : m === "kwh" ? v : v / 0.27) / 26;
+  (path === "res" || m === "bill" ? v / price : m === "kwh" ? v : v / 0.27) / F.days;
 export const tieredOptions = (path: "res" | "com", m: ComMethod, v: number, price = DEFAULT_KWH_PRICE) =>
   tiersFrom(path === "res" ? optionsForResBill(v, price) : optionsForCom(m, v, price));
 // Bot-style inverter choice for business systems: sizes that cover the need, then single/three phase.
@@ -400,6 +402,9 @@ export function QuoteBuilder({ pw, initialCustomerId }: { pw: string; initialCus
   const getKwh = useServerFn(getKwhPrice);
   const saveKwh = useServerFn(setKwhPrice);
   const { data: kwhData, refetch: refetchKwh } = useQuery(offlineQuery({ queryKey: ["kwh_price"], queryFn: () => getKwh({ data: { pw } }) }));
+  const getF = useServerFn(getFormulas);
+  const { data: fData } = useQuery(offlineQuery({ queryKey: ["formulas"], queryFn: () => getF({ data: { pw } }) }));
+  if (fData?.formulas) applyFormulas(fData.formulas);
   const kwhPrice = kwhData?.kwh_price ?? DEFAULT_KWH_PRICE;
   const [kwhEdit, setKwhEdit] = useState<string | null>(null);
   const saveKwhPrice = async () => {

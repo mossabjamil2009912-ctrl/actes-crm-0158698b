@@ -32,6 +32,11 @@ export const Route = createFileRoute("/api/public/bot-catalog")({
         }
         const { data: st } = await supabaseAdmin.from("app_settings").select("value").eq("key", "kwh_price").maybeSingle();
         const kwh_price = st ? Number(st.value) : 290;
+        const { mergeFormulas } = await import("@/lib/formulas");
+        const { data: fr } = await supabaseAdmin.from("app_settings").select("text_value").eq("key", "formulas").maybeSingle();
+        let fv: unknown = null;
+        try { fv = fr?.text_value ? JSON.parse(fr.text_value) : null; } catch { fv = null; }
+        const FORMULAS = mergeFormulas(fv);
         // Edited bot texts from the "المسار" screen: TEXT = [original fragment, new], BTN = [button id, original title, new title, new desc].
         const { data: bt } = await supabaseAdmin.from("bot_texts").select("kind,original,value,btn_id,desc_value");
         const BOT_TEXTS = { TEXT: [] as [string, string][], BTN: [] as [string, string, string | null, string | null][] };
@@ -46,7 +51,7 @@ export const Route = createFileRoute("/api/public/bot-catalog")({
           const edited = BOT_TEXTS.BTN.find((b) => b[0] === s.trigger_id && b[1] === s.trigger_title)?.[2];
           return { ...s, trigger_titles: [s.trigger_title, edited].filter(Boolean) };
         });
-        return Response.json({ settings: { kwh_price }, KWH_PRICE: kwh_price, updated_at: new Date().toISOString(), ITEM_PRICES: prices, ITEMS: items, CATALOG_FILES: files, AUTO_RULES: autoRules, BOT_TEXTS, BOT_STEPS });
+        return Response.json({ settings: { kwh_price }, KWH_PRICE: kwh_price, updated_at: new Date().toISOString(), ITEM_PRICES: prices, ITEMS: items, CATALOG_FILES: files, AUTO_RULES: autoRules, BOT_TEXTS, BOT_STEPS, FORMULAS });
       },
     },
   },
