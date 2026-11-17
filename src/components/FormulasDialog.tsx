@@ -82,6 +82,7 @@ export function FormulasDialog({ pw, code, onClose }: { pw: string; code: string
         <Num label="متر لكل منظومة" value={fx.cableM} onChange={(v) => up({ cableM: v })} />
       </Eq>
       <Eq n={7} title="صنف الكنشات (MC4)">
+        <Num label="عدد الألواح في الاسترنق" value={fx.panelsPerString} onChange={(v) => up({ panelsPerString: v })} />
         <Num label="عدد الأطقم لكل استرنق" value={fx.mc4PerString} onChange={(v) => up({ mc4PerString: v })} />
       </Eq>
     </div>

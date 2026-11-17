@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { applyAutoRules, type CatItem } from "@/lib/auto-rules";
+import { applyEquations, type EqItem } from "@/lib/formulas";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Search, FilePlus2, Save, Minus, Plus, Trash2, Check, Zap, Battery, Sun, Box, ShieldCheck, Server, Home, Cpu, Cable, Wrench, Printer, History, Share2, X, Download } from "lucide-react";
@@ -578,7 +579,7 @@ export function QuoteBuilder({ pw, initialCustomerId }: { pw: string; initialCus
       if (r) out.push({ key: r.key, name: r.name, unit: r.unit, price: Number(r.price ?? 0), qty, specs: specsOf(r) });
     }
     if (!out.length) return setMsg("أصناف هذه المنظومة غير متوفرة في قائمة الأصناف");
-    const t = p.type ?? "res", full = withAuto(out, t, new Set());
+    const t = p.type ?? "res", full = withAuto(applyEquations(out, items as EqItem[], catalogKeyFor), t, new Set());
     setQuoteType(t); setDismissed(new Set());
     setLines(Object.fromEntries(full.map((l) => [l.key, l])));
     setShowHist(false);
