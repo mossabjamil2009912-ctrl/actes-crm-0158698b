@@ -13,12 +13,16 @@ export type Formulas = {
   acSafety: number;      // breaker safety factor
   cableM: number;        // cable metres per system
   mc4PerString: number;  // MC4 sets per string
-  panelsPerString: number; // panels in one string (commercial / Low Voltage)
+  panelVoc: number;      // panel open-circuit voltage (V)
+  coldFactor: number;    // Voc rise in cold
+  vmaxSingle: number;    // single-phase inverter max DC voltage
+  vmaxThree: number;     // three-phase LV inverter max DC voltage
 };
 export const DEFAULT_FORMULAS: Formulas = {
   days: 26, sun: 5, dod: 0.85, night: { 30: 30, 50: 50, 70: 70 },
   resRanges: [[1.2], [2.5], [2.5], [4], [4], [5, 7.5], [13], [21], [31.7], [35.6], [55.4], [63.4], [71.3], [83.2], [106.9]],
-  dcMaxLines: 10, dcStep: 2, acSingleV: 220, acThreeDiv: 658, acSafety: 1.25, cableM: 1, mc4PerString: 1, panelsPerString: 15,
+  dcMaxLines: 10, dcStep: 2, acSingleV: 220, acThreeDiv: 658, acSafety: 1.25, cableM: 1, mc4PerString: 1,
+  panelVoc: 48.5, coldFactor: 1.1, vmaxSingle: 500, vmaxThree: 800,
 };
 export const F: Formulas = structuredClone(DEFAULT_FORMULAS);
 export const mergeFormulas = (v: unknown): Formulas => {
@@ -30,9 +34,13 @@ export const mergeFormulas = (v: unknown): Formulas => {
     night: { 30: num(o.night?.[30], 30), 50: num(o.night?.[50], 50), 70: num(o.night?.[70], 70) },
     resRanges: Array.isArray(o.resRanges) && o.resRanges.length === D.resRanges.length ? o.resRanges.map((r, i) => (Array.isArray(r) && r.every((x) => typeof x === "number") ? r : D.resRanges[i]!)) : D.resRanges,
     dcMaxLines: num(o.dcMaxLines, D.dcMaxLines), dcStep: num(o.dcStep, D.dcStep), acSingleV: num(o.acSingleV, D.acSingleV),
-    acThreeDiv: num(o.acThreeDiv, D.acThreeDiv), acSafety: num(o.acSafety, D.acSafety), cableM: num(o.cableM, D.cableM), mc4PerString: num(o.mc4PerString, D.mc4PerString), panelsPerString: num(o.panelsPerString, D.panelsPerString),
+    acThreeDiv: num(o.acThreeDiv, D.acThreeDiv), acSafety: num(o.acSafety, D.acSafety), cableM: num(o.cableM, D.cableM), mc4PerString: num(o.mc4PerString, D.mc4PerString), 
+    panelVoc: num(o.panelVoc, D.panelVoc), coldFactor: num(o.coldFactor, D.coldFactor), vmaxSingle: num(o.vmaxSingle, D.vmaxSingle), vmaxThree: num(o.vmaxThree, D.vmaxThree),
   };
 };
+// Strings (Voc): max per string = ⌊Vmax ÷ (Voc × cold)⌋; strings = ⌈panels ÷ max⌉ (at least one per inverter).
+export const maxPerString = (three: boolean, f: Formulas = F) => Math.max(1, Math.floor((three ? f.vmaxThree : f.vmaxSingle) / (f.panelVoc * f.coldFactor)));
+export const stringCount = (panels: number, three: boolean, inverters = 1, f: Formulas = F) => Math.max(inverters, Math.ceil(panels / maxPerString(three, f)));
 export const applyFormulas = (v: unknown) => Object.assign(F, mergeFormulas(v));
 // DC box: qty = ⌈N / max⌉, lines = ⌈(N/qty)/step⌉ × step.
 export const dcBoxes = (strings: number, f: Formulas = F) => {
@@ -56,7 +64,8 @@ export function applyEquations<L extends EqLine>(lines: L[], items: EqItem[], ke
   const invQty = lines.reduce((s, l, i) => s + (cat[i]?.category === "inverters" ? l.qty : 0), 0);
   const panels = lines.reduce((s, l, i) => s + (cat[i]?.category === "panels" ? l.qty : 0), 0);
   if (!invQty || !panels) return lines;
-  const strings = Math.max(1, Math.ceil(panels / f.panelsPerString));
+  const three = lines.some((l, i) => cat[i]?.category === "inverters" && /ثري|3\s*فاز|three|LP3|SG0\dLP3/i.test(`${l.name} ${cat[i]?.name} ${l.specs.join(" ")}`));
+  const strings = stringCount(panels, three, invQty, f);
   const as = (l: L, r: EqItem, qty: number): L => ({ ...l, key: r.key, name: r.name, unit: r.unit, price: Number(r.price ?? 0), qty, specs: specsOfItem(r).length ? specsOfItem(r) : l.specs });
   const out: L[] = [];
   let dcDone = false;

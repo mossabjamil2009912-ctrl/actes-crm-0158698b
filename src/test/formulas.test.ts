@@ -12,3 +12,12 @@ describe("editable equations", () => {
     expect(dailyNeed("res", "bill", 30000, 250)).toBe(4);
   });
 });
+
+import { maxPerString, stringCount, DEFAULT_FORMULAS as DF } from "@/lib/formulas";
+describe("string division (Voc)", () => {
+  it("single phase max 9 per string", () => expect(maxPerString(false, DF)).toBe(9));
+  it("three phase max 14 per string", () => expect(maxPerString(true, DF)).toBe(14));
+  it("14 single-phase panels → 2 strings", () => expect(stringCount(14, false, 1, DF)).toBe(2));
+  it("27 single-phase panels → 3 strings", () => expect(stringCount(27, false, 1, DF)).toBe(3));
+  it("52 three-phase panels → 4 strings", () => expect(stringCount(52, true, 1, DF)).toBe(4));
+});

@@ -82,7 +82,11 @@ export function FormulasDialog({ pw, code, onClose }: { pw: string; code: string
         <Num label="متر لكل منظومة" value={fx.cableM} onChange={(v) => up({ cableM: v })} />
       </Eq>
       <Eq n={7} title="صنف الكنشات (MC4)">
-        <Num label="عدد الألواح في الاسترنق" value={fx.panelsPerString} onChange={(v) => up({ panelsPerString: v })} />
+        <Num label="جهد اللوح Voc (فولت)" value={fx.panelVoc} onChange={(v) => up({ panelVoc: v })} />
+        <Num label="معامل الأمان الحراري" value={fx.coldFactor} onChange={(v) => up({ coldFactor: v })} />
+        <Num label="أقصى جهد إنفرتر سنجل فاز (فولت)" value={fx.vmaxSingle} onChange={(v) => up({ vmaxSingle: v })} />
+        <Num label="أقصى جهد إنفرتر ثري فاز (فولت)" value={fx.vmaxThree} onChange={(v) => up({ vmaxThree: v })} />
+        <p className="text-xs text-muted-foreground">أقصى ألواح بالاسترنق: سنجل {Math.max(1, Math.floor(fx.vmaxSingle / (fx.panelVoc * fx.coldFactor)))} · ثري {Math.max(1, Math.floor(fx.vmaxThree / (fx.panelVoc * fx.coldFactor)))}</p>
         <Num label="عدد الأطقم لكل استرنق" value={fx.mc4PerString} onChange={(v) => up({ mc4PerString: v })} />
       </Eq>
     </div>
